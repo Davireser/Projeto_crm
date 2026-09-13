@@ -6,6 +6,28 @@
 
 ---
 
+> **Versão consolidada.** Este arquivo reúne todas as seções da análise e projeto em um único documento, para entrega da disciplina.
+> A mesma matéria está dividida por seção em [`docs/arquitetura/`](arquitetura), que é a referência usada no dia a dia da implementação:
+>
+> | Seção deste documento | Arquivo correspondente |
+> |---|---|
+> | 1. Levantamento de Requisitos | [02-requisitos-crm.md](arquitetura/02-requisitos-crm.md) · [requisitos/](requisitos) |
+> | 2. Diagrama de Casos de Uso | [03-casos-de-uso.md](arquitetura/03-casos-de-uso.md) |
+> | 3. Diagrama de Classes | [04-diagrama-classes.md](arquitetura/04-diagrama-classes.md) |
+> | 3.1 Diagrama Entidade-Relacionamento | [05-diagrama-er.md](arquitetura/05-diagrama-er.md) |
+> | 4. Diagrama de Objetos | [09-diagrama-objetos.md](arquitetura/09-diagrama-objetos.md) |
+> | 5. Diagrama de Estados | [10-diagrama-estados.md](arquitetura/10-diagrama-estados.md) |
+> | 6. Boundary-Control-Entity | [11-boundary-control-entity.md](arquitetura/11-boundary-control-entity.md) |
+> | 7. Diagrama de Sequência | [06-diagrama-sequencia.md](arquitetura/06-diagrama-sequencia.md) |
+> | 8. Diagrama de Atividades | [12-diagrama-atividades.md](arquitetura/12-diagrama-atividades.md) |
+> | 9. Diagrama de Componentes | [07-diagrama-componentes.md](arquitetura/07-diagrama-componentes.md) |
+> | 10. DDD, Clean Architecture e TDD | [13-implantacao-ddd-clean-tdd.md](arquitetura/13-implantacao-ddd-clean-tdd.md) |
+>
+> Visão de produto e decisões de arquitetura, que não têm seção própria aqui, estão em
+> [01-visao-produto.md](arquitetura/01-visao-produto.md) e [08-decisao-arquitetura.md](arquitetura/08-decisao-arquitetura.md).
+
+---
+
 ## 1. Levantamento de Requisitos
 
 ### Requisitos Funcionais (RF)
@@ -48,7 +70,7 @@ Cada RF vira candidato a caso de uso na seção 2. RNF03/RNF04/RNF06 orientam di
 flowchart LR
     Usuario((Usuário))
     Admin((Administrador))
-    Admin --|> Usuario
+    Admin -.->|"herda de"| Usuario
 
     Usuario --> UC1[Registrar Novo Contato]
     UC1 -.include.-> UC2[Validar Dados de Contato]
