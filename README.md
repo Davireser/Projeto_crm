@@ -84,7 +84,6 @@ Projeto_CRM/
 │   ├── src/
 │   ├── tests/
 │   ├── alembic/
-│   ├── requirements.txt
 │   ├── pyproject.toml
 │   └── pytest.ini
 ├── frontend/
@@ -112,6 +111,7 @@ A solução deve entregar um funil de atendimento visível, rastreável e consis
 
 ## Referências documentais
 - [docs/documento-software.md](docs/documento-software.md) — documento consolidado de análise e projeto
+- [docs/apresentacao.pdf](docs/apresentacao.pdf) — apresentação/slide do CRM em PDF ([fonte em docs/apresentacao.md](docs/apresentacao.md))
 - [docs/especificacoes_tecnicas.md](docs/especificacoes_tecnicas.md)
 - [docs/tree.md](docs/tree.md)
 - [docs/arquitetura](docs/arquitetura)

@@ -8,6 +8,8 @@ Projeto_CRM/
 ├── docs/                                         # Documentação de produto, arquitetura e backlog
 │   ├── documento-software.md                     # Documento consolidado de análise e projeto (entrega da disciplina)
 │   ├── especificacoes_tecnicas.md                # Regras de negócio, stack, modelagem e contratos de API
+│   ├── apresentacao.md                           # Slide/apresentação do CRM (fonte markdown, modelo em exemplo/slide)
+│   ├── apresentacao.pdf                          # Apresentação em PDF, gerada a partir de apresentacao.md
 │   ├── tree.md                                   # Estrutura organizada do repositório
 │   ├── arquitetura/                              # Documentos de arquitetura (seções do documento consolidado)
 │   │   ├── 01-visao-produto.md                   # Visão geral, público-alvo e objetivos do produto
@@ -51,7 +53,6 @@ Projeto_CRM/
 │   │   ├── integration/                          # Repositórios Postgres e rotas
 │   │   └── e2e/                                  # Fluxo completo do funil
 │   ├── alembic/                                  # Migrations
-│   ├── requirements.txt
 │   ├── pyproject.toml
 │   └── pytest.ini
 ├── frontend/                                     # Aplicação web do painel Kanban

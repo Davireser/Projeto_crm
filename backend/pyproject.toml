@@ -1,0 +1,31 @@
+[project]
+name = "crm-atendimento-orcamentos"
+version = "0.1.0"
+description = "Backend do CRM de Atendimento e Orçamentos"
+requires-python = ">=3.12"
+# Dependências de execução. FastAPI, SQLAlchemy e Alembic entram nas Partes 3 e 4
+# do plano (docs/plano-backend.md).
+dependencies = []
+
+[dependency-groups]
+# Instalação: pip install --group dev
+dev = [
+    "pytest>=8.0",
+    "mypy>=1.10",
+    "ruff>=0.5",
+]
+
+[tool.mypy]
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
+files = ["src", "tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+# N818: exceções seguem a linguagem ubíqua em português (TransicaoInvalida), sem sufixo "Error".
+ignore = ["N818"]
