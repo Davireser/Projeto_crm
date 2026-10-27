@@ -3,23 +3,55 @@ name = "crm-atendimento-orcamentos"
 version = "0.1.0"
 description = "Backend do CRM de Atendimento e Orçamentos"
 requires-python = ">=3.12"
-# Dependências de execução. FastAPI, SQLAlchemy e Alembic entram nas Partes 3 e 4
-# do plano (docs/plano-backend.md).
-dependencies = []
+# Dependências de execução (plano em docs/plano-backend.md).
+# Instalação: pip install -e .
+dependencies = [
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "pydantic-settings>=2.4",
+    # Driver PostgreSQL em Python puro: roda em 32 bits e sem DLL (Smart App Control). Trocar assincrono
+    "pg8000>=1.31",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    # Token de acesso (JWT). O hash de senha usa o scrypt da própria biblioteca padrão.
+    "pyjwt>=2.8",
+    # Base de fusos horários: o Windows não traz a que o zoneinfo usa.
+    "tzdata>=2024.1",
+]
 
 [dependency-groups]
 # Instalação: pip install --group dev
 dev = [
     "pytest>=8.0",
+    # Cobertura de testes: pytest --cov (configuração em [tool.coverage.*] abaixo).
+    "pytest-cov>=5.0",
     "mypy>=1.10",
     "ruff>=0.5",
+    # Cliente HTTP usado pelo TestClient do FastAPI nos testes da API.
+    "httpx2",
 ]
 
 [tool.mypy]
 strict = true
-mypy_path = "src"
+mypy_path = "src,tests"
 explicit_package_bases = true
 files = ["src", "tests"]
+plugins = ["pydantic.mypy"]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+# Meta de qualidade do projeto: com --cov, o pytest falha abaixo de 80%.
+fail_under = 80
+# Só roda quando o arquivo é executado direto no terminal; o main() dele é testado.
+exclude_also = ['if __name__ == "__main__":']
+
+[tool.coverage.html]
+directory = "htmlcov"
 
 [tool.ruff]
 line-length = 100

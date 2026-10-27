@@ -18,15 +18,15 @@ class Usuario:
     def __init__(
         self, *, id: UUID, nome: str, email: Email, senha_hash: str, ativo: bool = True
     ) -> None:
-        nome = nome.strip()
-        if not nome:
-            raise FormatoInvalido("O nome do usuário é obrigatório.", campo="nome")
-
         self._id = id
-        self._nome = nome
+        self._nome = _nome_valido(nome)
         self._email = email
         self._senha_hash = senha_hash
         self._ativo = ativo
+
+    def atualizar_cadastro(self, *, nome: str, email: Email) -> None:
+        self._nome = _nome_valido(nome)
+        self._email = email
 
     @property
     def id(self) -> UUID:
@@ -66,3 +66,29 @@ class Administrador(Usuario):
 
     def ativar_usuario(self, usuario: Usuario) -> None:
         usuario._ativo = True
+
+    def definir_perfil(self, usuario: Usuario, perfil: Perfil) -> Usuario:
+        """Devolve o mesmo usuário (mesmo id e dados) com o novo perfil.
+
+        O próprio administrador não pode mudar o seu perfil — evita que o sistema
+        fique sem ninguém capaz de gerenciar usuários.
+        """
+        if usuario.id == self.id:
+            raise OperacaoNaoPermitida(
+                "Um administrador não pode alterar o próprio perfil.", campo="perfil"
+            )
+        classe = Administrador if perfil is Perfil.ADMINISTRADOR else Usuario
+        return classe(
+            id=usuario.id,
+            nome=usuario.nome,
+            email=usuario.email,
+            senha_hash=usuario.senha_hash,
+            ativo=usuario.ativo,
+        )
+
+
+def _nome_valido(nome: str) -> str:
+    nome = nome.strip()
+    if not nome:
+        raise FormatoInvalido("O nome do usuário é obrigatório.", campo="nome")
+    return nome

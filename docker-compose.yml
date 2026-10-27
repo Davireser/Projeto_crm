@@ -1,0 +1,79 @@
+# Orquestra o banco e o backend (RNF09). Uso, na raiz do projeto:
+#   docker compose up --build        -> PostgreSQL + API (Swagger em http://localhost:8000/docs)
+#                                       + pgAdmin, o banco pelo navegador (http://localhost:5050)
+#   docker compose run --rm testes   -> testes com cobertura (relatório em backend/htmlcov)
+# Os valores vêm do .env da raiz (veja .env.example); os padrões abaixo servem só para desenvolvimento.
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm}
+      POSTGRES_DB: crm
+    ports:
+      # Só para esta máquina: permite rodar a API ou os testes fora do Docker.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Cria também o banco crm_test (só na primeira subida, com o volume vazio).
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      # Por TCP: durante a inicialização o PostgreSQL só aceita conexões locais pelo socket,
+      # então o banco só fica "saudável" depois que o init.sql terminou.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U crm -d crm"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+      target: api
+    environment:
+      DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD:-crm}@db:5432/crm
+      JWT_SECRET: ${JWT_SECRET:-troque-este-valor-em-producao-por-um-segredo-longo}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-480}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      FUSO_HORARIO: ${FUSO_HORARIO:-America/Sao_Paulo}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  pgadmin:
+    # pgAdmin, o banco pelo navegador: http://localhost:5050. Login com PGADMIN_EMAIL e
+    # PGADMIN_PASSWORD; o servidor "CRM (Docker)" já vem cadastrado e, na primeira conexão,
+    # pede a senha do PostgreSQL. O login só é criado na primeira subida (volume vazio).
+    image: dpage/pgadmin4:9.8
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@crm.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "127.0.0.1:5050:80"
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  testes:
+    build:
+      context: ./backend
+      target: testes
+    profiles: ["testes"]  # não sobe no "docker compose up", só no "run"
+    environment:
+      DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD:-crm}@db:5432/crm
+      TEST_DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD:-crm}@db:5432/crm_test
+    volumes:
+      - ./backend/htmlcov:/app/htmlcov
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  pgadmin:

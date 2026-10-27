@@ -1,0 +1,12 @@
+# Fica fora da imagem: ambiente local, caches e relatórios gerados.
+.venv/
+**/__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.db
+.env
+.env.*
