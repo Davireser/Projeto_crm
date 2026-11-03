@@ -1,7 +1,12 @@
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
-from application.exceptions import AcessoNegado, EmailJaCadastrado, UsuarioNaoEncontrado
+from application.exceptions import (
+    AcessoNegado,
+    EmailJaCadastrado,
+    EmailNaoCadastrado,
+    UsuarioNaoEncontrado,
+)
 from application.portas import HashDeSenha
 from domain.entities.usuario import Administrador, Perfil, Usuario
 from domain.exceptions import FormatoInvalido, OperacaoNaoPermitida
@@ -80,13 +85,21 @@ class GerenciarUsuariosUseCase:
         assert isinstance(administrador, Administrador)
         return administrador
 
+    def redefinir_senha(self, email: str, nova_senha: str) -> Usuario:
+        """Troca a senha de quem a esqueceu. Uso operacional (linha de comando no servidor),
+        por isso não há solicitante: quem tem acesso ao servidor já tem acesso ao banco."""
+        endereco = Email(email)
+        _validar_senha(nova_senha)
+        usuario = self._usuarios.buscar_por_email(endereco)
+        if usuario is None:
+            raise EmailNaoCadastrado(endereco.endereco)
+        usuario = usuario.trocar_senha(self._hash.gerar(nova_senha))
+        self._usuarios.salvar(usuario)
+        return usuario
+
     def _criar(self, dados: DadosNovoUsuario) -> Usuario:
         email = Email(dados.email)
-        if len(dados.senha) < TAMANHO_MINIMO_DA_SENHA:
-            raise FormatoInvalido(
-                f"A senha precisa ter pelo menos {TAMANHO_MINIMO_DA_SENHA} caracteres.",
-                campo="senha",
-            )
+        _validar_senha(dados.senha)
         self._garantir_email_livre(email, dono=None)
 
         classe = Administrador if dados.perfil is Perfil.ADMINISTRADOR else Usuario
@@ -100,6 +113,14 @@ class GerenciarUsuariosUseCase:
         existente = self._usuarios.buscar_por_email(email)
         if existente is not None and existente.id != dono:
             raise EmailJaCadastrado()
+
+
+def _validar_senha(senha: str) -> None:
+    if len(senha) < TAMANHO_MINIMO_DA_SENHA:
+        raise FormatoInvalido(
+            f"A senha precisa ter pelo menos {TAMANHO_MINIMO_DA_SENHA} caracteres.",
+            campo="senha",
+        )
 
 
 def _exigir_administrador(solicitante: Usuario) -> Administrador:

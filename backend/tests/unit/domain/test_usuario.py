@@ -109,3 +109,17 @@ def test_administrador_nao_pode_alterar_o_proprio_perfil() -> None:
         admin.definir_perfil(admin, Perfil.USUARIO)
 
     assert erro.value.campo == "perfil"
+
+
+def test_trocar_senha_devolve_usuario_com_novo_hash() -> None:
+    ana = usuario()
+
+    nova = ana.trocar_senha("hash:nova")
+
+    assert nova.senha_hash == "hash:nova"
+    assert (nova.id, nova.nome, nova.email, nova.ativo) == (ana.id, ana.nome, ana.email, ana.ativo)
+    assert ana.senha_hash != "hash:nova"
+
+
+def test_trocar_senha_mantem_o_perfil_de_administrador() -> None:
+    assert isinstance(administrador().trocar_senha("hash:nova"), Administrador)

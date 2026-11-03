@@ -30,6 +30,14 @@ class UsuarioNaoEncontrado(RecursoNaoEncontrado):
         super().__init__("Usuário", usuario_id)
 
 
+class EmailNaoCadastrado(Exception):
+    """Nenhum usuário com o e-mail informado (usado pelo comando de redefinir senha)."""
+
+    def __init__(self, email: str) -> None:
+        self.mensagem = f"Nenhum usuário com o e-mail {email}."
+        super().__init__(self.mensagem)
+
+
 class ErroDeAcesso(Exception):
     """Base dos erros de autenticação e autorização."""
 

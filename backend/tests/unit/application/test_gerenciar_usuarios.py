@@ -5,7 +5,12 @@ from uuid import uuid4
 import pytest
 
 from adapters.repositories.em_memoria import UsuarioRepositoryEmMemoria
-from application.exceptions import AcessoNegado, EmailJaCadastrado, UsuarioNaoEncontrado
+from application.exceptions import (
+    AcessoNegado,
+    EmailJaCadastrado,
+    EmailNaoCadastrado,
+    UsuarioNaoEncontrado,
+)
 from application.use_cases.gerenciar_usuarios import (
     DadosEdicaoUsuario,
     DadosNovoUsuario,
@@ -201,3 +206,34 @@ def test_primeiro_administrador_so_quando_nao_ha_usuarios(
             DadosNovoUsuario(nome="Outro", email="outro@crm.com", senha="senha-forte")
         )
     assert len(usuarios.listar_todos()) == 1
+
+
+# --- Redefinir senha (comando de manutenção, sem solicitante) -----------------
+
+
+def test_redefinir_senha_grava_so_o_novo_hash(
+    use_case: GerenciarUsuariosUseCase, usuarios: UsuarioRepositoryEmMemoria, ana: Usuario
+) -> None:
+    redefinido = use_case.redefinir_senha(" ANA@crm.com ", "nova-senha-123")
+
+    salvo = usuarios.buscar_por_id(ana.id)
+    assert salvo is not None
+    assert salvo.senha_hash == "hash:nova-senha-123"
+    assert redefinido.id == ana.id
+
+
+def test_redefinir_senha_curta_e_rejeitada(
+    use_case: GerenciarUsuariosUseCase, usuarios: UsuarioRepositoryEmMemoria, ana: Usuario
+) -> None:
+    with pytest.raises(FormatoInvalido) as erro:
+        use_case.redefinir_senha("ana@crm.com", "curta")
+
+    assert erro.value.campo == "senha"
+    salvo = usuarios.buscar_por_id(ana.id)
+    assert salvo is not None
+    assert salvo.senha_hash == "hash:ana12345"
+
+
+def test_redefinir_senha_de_email_desconhecido(use_case: GerenciarUsuariosUseCase) -> None:
+    with pytest.raises(EmailNaoCadastrado, match="ninguem@crm.com"):
+        use_case.redefinir_senha("ninguem@crm.com", "nova-senha-123")

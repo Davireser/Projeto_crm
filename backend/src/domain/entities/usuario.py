@@ -33,6 +33,9 @@ class Usuario:
     def atualizar_cadastro(self, *, nome: str, email: Email) -> "Usuario":
         return replace(self, nome=nome, email=email)
 
+    def trocar_senha(self, senha_hash: str) -> "Usuario":
+        return replace(self, senha_hash=senha_hash)
+
 
 @dataclass(frozen=True, kw_only=True)
 class Administrador(Usuario):

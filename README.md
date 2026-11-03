@@ -63,6 +63,7 @@ docker compose up --build          # PostgreSQL + API
 - Swagger (documentação interativa): http://localhost:8000/docs
 - Banco pelo navegador (pgAdmin): http://localhost:5050 — login `admin@crm.com` / `admin123` (configurável no `.env`); servidor "CRM (Docker)" já cadastrado, senha do PostgreSQL `crm`
 - Primeiro administrador: `docker compose exec api python src/criar_administrador.py --nome "Seu Nome" --email voce@email.com`
+- Esqueceu a senha: `docker compose exec api python src/redefinir_senha.py --email voce@email.com` (a nova senha é pedida no terminal)
 - Testes com cobertura: `docker compose run --rm testes` (relatório em `backend/htmlcov/index.html`; meta mínima de 80%)
 
 Detalhes em [docs/plano-backend.md](docs/plano-backend.md).
