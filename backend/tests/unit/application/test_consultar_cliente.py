@@ -72,9 +72,11 @@ def test_historico_reune_interacoes_de_todos_os_orcamentos_em_ordem_cronologica(
     contato = novo_contato()
     primeiro = contato.orcamento
     segundo = contato.cliente.abrir_orcamento(hoje=date(2026, 9, 15))
-    primeiro.registrar_interacao(TipoInteracao.MENSAGEM, "primeiro contato", agora=as_(9))
-    segundo.registrar_interacao(TipoInteracao.LIGACAO, "novo pedido", agora=as_(11))
-    primeiro.registrar_interacao(TipoInteracao.REUNIAO, "visita", agora=as_(10))
+    primeiro, _ = primeiro.registrar_interacao(
+        TipoInteracao.MENSAGEM, "primeiro contato", agora=as_(9)
+    )
+    segundo, _ = segundo.registrar_interacao(TipoInteracao.LIGACAO, "novo pedido", agora=as_(11))
+    primeiro, _ = primeiro.registrar_interacao(TipoInteracao.REUNIAO, "visita", agora=as_(10))
     orcamentos.salvar(primeiro)
     orcamentos.salvar(segundo)
 
@@ -95,8 +97,10 @@ def test_historico_nao_mistura_clientes(
 ) -> None:
     maria = novo_contato()
     joao = novo_contato(nome="João", email="joao@x.com")
-    joao.orcamento.registrar_interacao(TipoInteracao.MENSAGEM, "do João", agora=as_(9))
-    orcamentos.salvar(joao.orcamento)
+    orcamento_joao, _ = joao.orcamento.registrar_interacao(
+        TipoInteracao.MENSAGEM, "do João", agora=as_(9)
+    )
+    orcamentos.salvar(orcamento_joao)
 
     assert consultar_historico.executar(maria.cliente.id) == []
 

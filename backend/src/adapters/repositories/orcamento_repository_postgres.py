@@ -73,10 +73,10 @@ def _para_entidade(model: OrcamentoModel) -> Orcamento:
         valor=ValorOrcado(model.valor) if model.valor is not None else None,
         data_abertura=model.data_abertura,
         data_fechamento=model.data_fechamento,
-        interacoes=[
+        interacoes=tuple(
             Interacao(
                 id=i.id, tipo=TipoInteracao(i.tipo), conteudo=i.conteudo, data_hora=i.data_hora
             )
             for i in model.interacoes
-        ],
+        ),
     )

@@ -15,6 +15,6 @@ class DefinirValorUseCase:
 
     def executar(self, orcamento_id: UUID, valor: Decimal) -> Orcamento:
         orcamento = obter_orcamento(self._orcamentos, orcamento_id)
-        orcamento.definir_valor(ValorOrcado(valor))
+        orcamento = orcamento.definir_valor(ValorOrcado(valor))
         self._orcamentos.salvar(orcamento)
         return orcamento

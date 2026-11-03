@@ -57,11 +57,11 @@ class GerenciarUsuariosUseCase:
         if dados.nome is not None or dados.email is not None:
             email = Email(dados.email) if dados.email is not None else usuario.email
             self._garantir_email_livre(email, dono=usuario.id)
-            usuario.atualizar_cadastro(nome=dados.nome or usuario.nome, email=email)
+            usuario = usuario.atualizar_cadastro(nome=dados.nome or usuario.nome, email=email)
         if dados.ativo is True:
-            admin.ativar_usuario(usuario)
+            usuario = admin.ativar_usuario(usuario)
         elif dados.ativo is False:
-            admin.desativar_usuario(usuario)
+            usuario = admin.desativar_usuario(usuario)
         if dados.perfil is not None and dados.perfil is not usuario.perfil:
             usuario = admin.definir_perfil(usuario, dados.perfil)
 

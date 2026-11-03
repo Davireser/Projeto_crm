@@ -4,6 +4,7 @@ Primeiro teste do plano de TDD: a máquina de estados inteira é exercitada aqui
 sem banco e sem framework.
 """
 
+import dataclasses
 import itertools
 from datetime import date, datetime
 from decimal import Decimal
@@ -42,9 +43,9 @@ def novo_orcamento() -> Orcamento:
 def orcamento_em(estagio: EstagioAtendimento, *, com_valor: bool = True) -> Orcamento:
     orcamento = novo_orcamento()
     if com_valor:
-        orcamento.definir_valor(VALOR)
+        orcamento = orcamento.definir_valor(VALOR)
     for passo in CAMINHO[estagio]:
-        orcamento.mover_estagio(passo, hoje=HOJE)
+        orcamento = orcamento.mover_estagio(passo, hoje=HOJE)
     return orcamento
 
 
@@ -86,9 +87,11 @@ def test_transicao_permitida_altera_o_estagio(
 ) -> None:
     orcamento = orcamento_em(origem)
 
-    orcamento.mover_estagio(destino, hoje=HOJE)
+    movido = orcamento.mover_estagio(destino, hoje=HOJE)
 
-    assert orcamento.estagio is destino
+    assert movido.estagio is destino
+    assert movido.id == orcamento.id
+    assert orcamento.estagio is origem
 
 
 @pytest.mark.parametrize(("origem", "destino"), PARES_PROIBIDOS)
@@ -127,10 +130,9 @@ def test_nao_envia_orcamento_sem_valor() -> None:
 def test_definir_valor_libera_a_transicao_guardada() -> None:
     orcamento = orcamento_em(E.EM_NEGOCIACAO, com_valor=False)
 
-    orcamento.definir_valor(VALOR)
-    orcamento.mover_estagio(E.ORCAMENTO_ENVIADO, hoje=HOJE)
+    enviado = orcamento.definir_valor(VALOR).mover_estagio(E.ORCAMENTO_ENVIADO, hoje=HOJE)
 
-    assert orcamento.estagio is E.ORCAMENTO_ENVIADO
+    assert enviado.estagio is E.ORCAMENTO_ENVIADO
 
 
 def test_nao_fecha_orcamento_sem_valor() -> None:
@@ -154,9 +156,9 @@ def test_nao_fecha_orcamento_sem_valor() -> None:
 def test_marcar_perdido_nao_exige_valor() -> None:
     orcamento = orcamento_em(E.EM_NEGOCIACAO, com_valor=False)
 
-    orcamento.mover_estagio(E.PERDIDO, hoje=HOJE)
+    perdido = orcamento.mover_estagio(E.PERDIDO, hoje=HOJE)
 
-    assert orcamento.estagio is E.PERDIDO
+    assert perdido.estagio is E.PERDIDO
 
 
 # --- Data de fechamento (RN03) -----------------------------------------------
@@ -187,9 +189,10 @@ def test_valor_pode_ser_alterado_enquanto_aberto() -> None:
     orcamento = orcamento_em(E.ORCAMENTO_ENVIADO)
     novo_valor = ValorOrcado(Decimal("3900.00"))
 
-    orcamento.definir_valor(novo_valor)
+    alterado = orcamento.definir_valor(novo_valor)
 
-    assert orcamento.valor == novo_valor
+    assert alterado.valor == novo_valor
+    assert orcamento.valor == VALOR
 
 
 @pytest.mark.parametrize("terminal", [E.FECHADO, E.PERDIDO])
@@ -209,20 +212,22 @@ def test_valor_nao_pode_ser_alterado_apos_encerramento(terminal: EstagioAtendime
 def test_registrar_interacao_adiciona_ao_agregado() -> None:
     orcamento = novo_orcamento()
 
-    interacao = orcamento.registrar_interacao(
+    com_interacao, interacao = orcamento.registrar_interacao(
         TipoInteracao.LIGACAO, "Cliente pediu 500 caixas", agora=AGORA
     )
 
-    assert orcamento.interacoes == (interacao,)
+    assert com_interacao.interacoes == (interacao,)
+    assert orcamento.interacoes == ()
     assert interacao.tipo is TipoInteracao.LIGACAO
     assert interacao.conteudo == "Cliente pediu 500 caixas"
     assert interacao.data_hora == AGORA
 
 
 def test_interacoes_preservam_ordem_de_registro() -> None:
-    orcamento = novo_orcamento()
-    primeira = orcamento.registrar_interacao(TipoInteracao.MENSAGEM, "Oi", agora=AGORA)
-    segunda = orcamento.registrar_interacao(TipoInteracao.REUNIAO, "Visita", agora=AGORA)
+    orcamento, primeira = novo_orcamento().registrar_interacao(
+        TipoInteracao.MENSAGEM, "Oi", agora=AGORA
+    )
+    orcamento, segunda = orcamento.registrar_interacao(TipoInteracao.REUNIAO, "Visita", agora=AGORA)
 
     assert orcamento.interacoes == (primeira, segunda)
 
@@ -242,7 +247,7 @@ def test_interacao_sem_conteudo_e_rejeitada(conteudo: str) -> None:
 def test_interacao_pode_ser_registrada_apos_encerramento(terminal: EstagioAtendimento) -> None:
     orcamento = orcamento_em(terminal)
 
-    orcamento.registrar_interacao(TipoInteracao.MENSAGEM, "Pós-venda", agora=AGORA)
+    orcamento, _ = orcamento.registrar_interacao(TipoInteracao.MENSAGEM, "Pós-venda", agora=AGORA)
 
     assert len(orcamento.interacoes) == 1
 
@@ -251,3 +256,10 @@ def test_lista_de_interacoes_nao_pode_ser_alterada_por_fora() -> None:
     orcamento = novo_orcamento()
 
     assert isinstance(orcamento.interacoes, tuple)
+
+
+def test_orcamento_e_imutavel() -> None:
+    orcamento = novo_orcamento()
+
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        orcamento.estagio = E.FECHADO  # type: ignore[misc]

@@ -66,8 +66,7 @@ def test_usuario_desativado_nao_entra(usuarios: UsuarioRepositoryEmMemoria) -> N
     admin = Administrador(id=uuid4(), nome="Admin", email=Email("adm@crm.com"), senha_hash="h")
     ana = usuarios.buscar_por_email(Email("ana@crm.com"))
     assert ana is not None
-    admin.desativar_usuario(ana)
-    usuarios.salvar(ana)
+    usuarios.salvar(admin.desativar_usuario(ana))
 
     with pytest.raises(CredenciaisInvalidas):
         AutenticarUsuarioUseCase(usuarios, HashFalso()).executar("ana@crm.com", "segredo123")

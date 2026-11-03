@@ -83,7 +83,11 @@ def test_cliente_pode_abrir_varios_orcamentos_independentes() -> None:
 def test_atualizar_contato_troca_telefone_e_email() -> None:
     cliente = cadastrar()
 
-    cliente.atualizar_contato(telefone=Telefone("1134567890"), email=Email("novo@x.com"))
+    atualizado = cliente.atualizar_contato(
+        telefone=Telefone("1134567890"), email=Email("novo@x.com")
+    )
 
-    assert cliente.telefone == Telefone("1134567890")
-    assert cliente.email == Email("novo@x.com")
+    assert atualizado.telefone == Telefone("1134567890")
+    assert atualizado.email == Email("novo@x.com")
+    assert atualizado.id == cliente.id
+    assert cliente.email != atualizado.email

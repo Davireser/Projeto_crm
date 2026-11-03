@@ -43,9 +43,13 @@ def cliente_salvo(repos: Repositorios, nome: str = "Maria") -> Cliente:
 
 def test_orcamento_round_trip_com_interacoes(repos: Repositorios) -> None:
     orcamento = cliente_salvo(repos).abrir_orcamento(hoje=HOJE)
-    orcamento.definir_valor(ValorOrcado(Decimal("4200")))
-    orcamento.registrar_interacao(TipoInteracao.LIGACAO, "Pediu 500 caixas", agora=AGORA)
-    orcamento.registrar_interacao(TipoInteracao.REUNIAO, "Visita", agora=AGORA + timedelta(hours=1))
+    orcamento = orcamento.definir_valor(ValorOrcado(Decimal("4200")))
+    orcamento, _ = orcamento.registrar_interacao(
+        TipoInteracao.LIGACAO, "Pediu 500 caixas", agora=AGORA
+    )
+    orcamento, _ = orcamento.registrar_interacao(
+        TipoInteracao.REUNIAO, "Visita", agora=AGORA + timedelta(hours=1)
+    )
 
     repos.orcamentos.salvar(orcamento)
     carregado = repos.orcamentos.buscar_por_id(orcamento.id)
@@ -85,9 +89,9 @@ def test_alteracao_sem_salvar_nao_persiste(repos: Repositorios) -> None:
 def test_salvar_de_novo_atualiza_em_vez_de_duplicar(repos: Repositorios) -> None:
     orcamento = cliente_salvo(repos).abrir_orcamento(hoje=HOJE)
     repos.orcamentos.salvar(orcamento)
-    orcamento.definir_valor(ValorOrcado(Decimal("900")))
-    orcamento.mover_estagio(EstagioAtendimento.PERDIDO, hoje=date(2026, 9, 20))
-    orcamento.registrar_interacao(TipoInteracao.MENSAGEM, "Desistiu", agora=AGORA)
+    orcamento = orcamento.definir_valor(ValorOrcado(Decimal("900")))
+    orcamento = orcamento.mover_estagio(EstagioAtendimento.PERDIDO, hoje=date(2026, 9, 20))
+    orcamento, _ = orcamento.registrar_interacao(TipoInteracao.MENSAGEM, "Desistiu", agora=AGORA)
 
     repos.orcamentos.salvar(orcamento)
 
@@ -137,7 +141,7 @@ def test_cliente_round_trip(repos: Repositorios) -> None:
 
 def test_atualizar_cliente(repos: Repositorios) -> None:
     maria = cliente_salvo(repos)
-    maria.atualizar_contato(telefone=Telefone("1134567890"), email=Email("nova@x.com"))
+    maria = maria.atualizar_contato(telefone=Telefone("1134567890"), email=Email("nova@x.com"))
 
     repos.clientes.salvar(maria)
 
@@ -185,8 +189,7 @@ def test_salvar_usuario_de_novo_atualiza(repos: Repositorios) -> None:
     repos.usuarios.salvar(admin)
     repos.usuarios.salvar(comum)
 
-    admin.desativar_usuario(comum)
-    repos.usuarios.salvar(comum)
+    repos.usuarios.salvar(admin.desativar_usuario(comum))
 
     carregado = repos.usuarios.buscar_por_id(comum.id)
     assert carregado is not None

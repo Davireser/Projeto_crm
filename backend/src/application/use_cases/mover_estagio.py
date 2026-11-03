@@ -20,6 +20,6 @@ class MoverEstagioUseCase:
 
     def executar(self, orcamento_id: UUID, novo_estagio: EstagioAtendimento) -> Orcamento:
         orcamento = obter_orcamento(self._orcamentos, orcamento_id)
-        orcamento.mover_estagio(novo_estagio, hoje=self._relogio().date())
+        orcamento = orcamento.mover_estagio(novo_estagio, hoje=self._relogio().date())
         self._orcamentos.salvar(orcamento)
         return orcamento

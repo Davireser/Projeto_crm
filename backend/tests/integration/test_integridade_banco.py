@@ -53,7 +53,7 @@ def orcamento_com_interacao(sessao: Session) -> tuple[Cliente, Orcamento]:
     )
     ClienteRepositoryPostgres(sessao).salvar(cliente)
     orcamento = cliente.abrir_orcamento(hoje=AGORA.date())
-    orcamento.registrar_interacao(TipoInteracao.MENSAGEM, "Oi", agora=AGORA)
+    orcamento, _ = orcamento.registrar_interacao(TipoInteracao.MENSAGEM, "Oi", agora=AGORA)
     OrcamentoRepositoryPostgres(sessao).salvar(orcamento)
     return cliente, orcamento
 

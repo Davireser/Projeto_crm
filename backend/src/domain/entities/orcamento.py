@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from uuid import UUID, uuid4
 
@@ -9,31 +9,22 @@ from domain.value_objects.tipo_interacao import TipoInteracao
 from domain.value_objects.valor_orcado import ValorOrcado
 
 
+@dataclass(frozen=True, kw_only=True)
 class Orcamento:
     """Aggregate root do funil — dono das regras de transição de estágio.
 
     O construtor serve à reconstituição pelo repositório; um orçamento novo
     nasce por `Orcamento.abrir()` ou `Cliente.abrir_orcamento()`.
+    Imutável: cada operação devolve um novo Orcamento, que o caso de uso salva.
     """
 
-    def __init__(
-        self,
-        *,
-        id: UUID,
-        cliente_id: UUID,
-        estagio: EstagioAtendimento,
-        valor: ValorOrcado | None,
-        data_abertura: date,
-        data_fechamento: date | None = None,
-        interacoes: Iterable[Interacao] = (),
-    ) -> None:
-        self._id = id
-        self._cliente_id = cliente_id
-        self._estagio = estagio
-        self._valor = valor
-        self._data_abertura = data_abertura
-        self._data_fechamento = data_fechamento
-        self._interacoes = list(interacoes)
+    id: UUID
+    cliente_id: UUID
+    estagio: EstagioAtendimento
+    valor: ValorOrcado | None
+    data_abertura: date
+    data_fechamento: date | None = None
+    interacoes: tuple[Interacao, ...] = ()
 
     @classmethod
     def abrir(cls, cliente_id: UUID, hoje: date) -> "Orcamento":
@@ -45,70 +36,43 @@ class Orcamento:
             data_abertura=hoje,
         )
 
-    @property
-    def id(self) -> UUID:
-        return self._id
-
-    @property
-    def cliente_id(self) -> UUID:
-        return self._cliente_id
-
-    @property
-    def estagio(self) -> EstagioAtendimento:
-        return self._estagio
-
-    @property
-    def valor(self) -> ValorOrcado | None:
-        return self._valor
-
-    @property
-    def data_abertura(self) -> date:
-        return self._data_abertura
-
-    @property
-    def data_fechamento(self) -> date | None:
-        return self._data_fechamento
-
-    @property
-    def interacoes(self) -> tuple[Interacao, ...]:
-        return tuple(self._interacoes)
-
     def esta_em_aberto(self) -> bool:
-        return not self._estagio.eh_terminal()
+        return not self.estagio.eh_terminal()
 
-    def mover_estagio(self, novo_estagio: EstagioAtendimento, hoje: date) -> None:
+    def mover_estagio(self, novo_estagio: EstagioAtendimento, hoje: date) -> "Orcamento":
         """Aplica RN01 (sequência), RN02 (guarda de valor) e RN03 (data de fechamento).
 
-        Todas as validações acontecem antes de qualquer alteração de estado.
+        Todas as validações acontecem antes de criar o novo estado.
         """
-        if not self._estagio.pode_mover_para(novo_estagio):
+        if not self.estagio.pode_mover_para(novo_estagio):
             raise TransicaoInvalida(
-                f"Não é possível mover de {self._estagio} para {novo_estagio}",
+                f"Não é possível mover de {self.estagio} para {novo_estagio}",
                 campo="estagio",
             )
-        if novo_estagio.exige_valor() and self._valor is None:
+        if novo_estagio.exige_valor() and self.valor is None:
             raise TransicaoInvalida(
                 f"Orçamento sem valor definido não pode ir para {novo_estagio}",
                 campo="valor",
             )
 
-        self._estagio = novo_estagio
-        if novo_estagio.eh_terminal():
-            self._data_fechamento = hoje
+        data_fechamento = hoje if novo_estagio.eh_terminal() else self.data_fechamento
+        return replace(self, estagio=novo_estagio, data_fechamento=data_fechamento)
 
-    def definir_valor(self, valor: ValorOrcado) -> None:
+    def definir_valor(self, valor: ValorOrcado) -> "Orcamento":
         if not self.esta_em_aberto():
             raise TransicaoInvalida(
-                f"Orçamento em {self._estagio} está encerrado e não pode ter o valor alterado",
+                f"Orçamento em {self.estagio} está encerrado e não pode ter o valor alterado",
                 campo="valor",
             )
-        self._valor = valor
+        return replace(self, valor=valor)
 
-    def registrar_interacao(self, tipo: TipoInteracao, conteudo: str, agora: datetime) -> Interacao:
+    def registrar_interacao(
+        self, tipo: TipoInteracao, conteudo: str, agora: datetime
+    ) -> tuple["Orcamento", Interacao]:
+        """Devolve o orçamento com a nova interação e a própria interação criada."""
         conteudo = conteudo.strip()
         if not conteudo:
             raise FormatoInvalido("O conteúdo da interação é obrigatório.", campo="conteudo")
 
         interacao = Interacao(id=uuid4(), tipo=tipo, conteudo=conteudo, data_hora=agora)
-        self._interacoes.append(interacao)
-        return interacao
+        return replace(self, interacoes=(*self.interacoes, interacao)), interacao

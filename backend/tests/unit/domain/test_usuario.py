@@ -36,11 +36,13 @@ def test_administrador_e_um_usuario_com_perfil_administrador() -> None:
 def test_administrador_desativa_e_reativa_outro_usuario() -> None:
     admin, comum = administrador(), usuario()
 
-    admin.desativar_usuario(comum)
-    assert not comum.ativo
-
-    admin.ativar_usuario(comum)
+    desativado = admin.desativar_usuario(comum)
+    assert not desativado.ativo
     assert comum.ativo
+
+    reativado = admin.ativar_usuario(desativado)
+    assert reativado.ativo
+    assert reativado.id == comum.id
 
 
 def test_administrador_nao_pode_desativar_a_propria_conta() -> None:
@@ -62,10 +64,11 @@ def test_usuario_sem_nome_e_rejeitado(nome: str) -> None:
 def test_atualizar_cadastro_troca_nome_e_email() -> None:
     ana = usuario()
 
-    ana.atualizar_cadastro(nome="  Ana Lima ", email=Email("ana.lima@crm.com"))
+    atualizada = ana.atualizar_cadastro(nome="  Ana Lima ", email=Email("ana.lima@crm.com"))
 
-    assert ana.nome == "Ana Lima"
-    assert ana.email == Email("ana.lima@crm.com")
+    assert atualizada.nome == "Ana Lima"
+    assert atualizada.email == Email("ana.lima@crm.com")
+    assert ana.nome == "Ana"
 
 
 def test_atualizar_cadastro_sem_nome_e_rejeitado_sem_alterar_nada() -> None:
@@ -79,8 +82,8 @@ def test_atualizar_cadastro_sem_nome_e_rejeitado_sem_alterar_nada() -> None:
 
 
 def test_administrador_promove_usuario_mantendo_os_dados() -> None:
-    admin, comum = administrador(), usuario()
-    admin.desativar_usuario(comum)
+    admin = administrador()
+    comum = admin.desativar_usuario(usuario())
 
     promovido = admin.definir_perfil(comum, Perfil.ADMINISTRADOR)
 

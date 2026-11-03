@@ -1,4 +1,6 @@
+from dataclasses import dataclass, replace
 from enum import StrEnum
+from typing import ClassVar
 from uuid import UUID
 
 from domain.exceptions import FormatoInvalido, OperacaoNaoPermitida
@@ -10,62 +12,46 @@ class Perfil(StrEnum):
     ADMINISTRADOR = "ADMINISTRADOR"
 
 
+@dataclass(frozen=True, kw_only=True)
 class Usuario:
-    """Operador do sistema. Periférico ao funil — não participa do agregado Orçamento."""
+    """Operador do sistema. Periférico ao funil — não participa do agregado Orçamento.
 
-    perfil: Perfil = Perfil.USUARIO
+    Imutável: alterações devolvem um novo Usuario.
+    """
 
-    def __init__(
-        self, *, id: UUID, nome: str, email: Email, senha_hash: str, ativo: bool = True
-    ) -> None:
-        self._id = id
-        self._nome = _nome_valido(nome)
-        self._email = email
-        self._senha_hash = senha_hash
-        self._ativo = ativo
+    perfil: ClassVar[Perfil] = Perfil.USUARIO
 
-    def atualizar_cadastro(self, *, nome: str, email: Email) -> None:
-        self._nome = _nome_valido(nome)
-        self._email = email
+    id: UUID
+    nome: str
+    email: Email
+    senha_hash: str
+    ativo: bool = True
 
-    @property
-    def id(self) -> UUID:
-        return self._id
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "nome", _nome_valido(self.nome))
 
-    @property
-    def nome(self) -> str:
-        return self._nome
-
-    @property
-    def email(self) -> Email:
-        return self._email
-
-    @property
-    def senha_hash(self) -> str:
-        return self._senha_hash
-
-    @property
-    def ativo(self) -> bool:
-        return self._ativo
+    def atualizar_cadastro(self, *, nome: str, email: Email) -> "Usuario":
+        return replace(self, nome=nome, email=email)
 
 
+@dataclass(frozen=True, kw_only=True)
 class Administrador(Usuario):
     """Usuário com permissão para gerenciar outros usuários (RF10).
 
     Persistido na mesma tabela de `Usuario`, distinguido pela coluna `perfil`.
     """
 
-    perfil = Perfil.ADMINISTRADOR
+    perfil: ClassVar[Perfil] = Perfil.ADMINISTRADOR
 
-    def desativar_usuario(self, usuario: Usuario) -> None:
+    def desativar_usuario(self, usuario: Usuario) -> Usuario:
         if usuario.id == self.id:
             raise OperacaoNaoPermitida(
                 "Um administrador não pode desativar a própria conta.", campo="ativo"
             )
-        usuario._ativo = False
+        return replace(usuario, ativo=False)
 
-    def ativar_usuario(self, usuario: Usuario) -> None:
-        usuario._ativo = True
+    def ativar_usuario(self, usuario: Usuario) -> Usuario:
+        return replace(usuario, ativo=True)
 
     def definir_perfil(self, usuario: Usuario, perfil: Perfil) -> Usuario:
         """Devolve o mesmo usuário (mesmo id e dados) com o novo perfil.

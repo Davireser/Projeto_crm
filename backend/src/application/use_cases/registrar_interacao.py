@@ -16,6 +16,6 @@ class RegistrarInteracaoUseCase:
 
     def executar(self, orcamento_id: UUID, tipo: TipoInteracao, conteudo: str) -> Interacao:
         orcamento = obter_orcamento(self._orcamentos, orcamento_id)
-        interacao = orcamento.registrar_interacao(tipo, conteudo, agora=self._relogio())
+        orcamento, interacao = orcamento.registrar_interacao(tipo, conteudo, agora=self._relogio())
         self._orcamentos.salvar(orcamento)
         return interacao
