@@ -18,6 +18,7 @@ class CardOrcamento:
     estagio: EstagioAtendimento
     valor: Decimal | None
     data_abertura: date
+    data_fechamento: date | None
     qtd_interacoes: int
 
 
@@ -51,6 +52,7 @@ class ConsultarOrcamentosUseCase:
                     estagio=orcamento.estagio,
                     valor=orcamento.valor.valor if orcamento.valor else None,
                     data_abertura=orcamento.data_abertura,
+                    data_fechamento=orcamento.data_fechamento,
                     qtd_interacoes=len(orcamento.interacoes),
                 )
             )

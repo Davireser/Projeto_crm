@@ -76,13 +76,15 @@ describe("criarQueryClient — nova tentativa", () => {
 
 describe("API do navegador", () => {
   it("busca o painel pelo proxy /api do Next", async () => {
+    const card = { id: "o1", estagio: "NOVO_CONTATO" };
+    const porEstagio = { NOVO_CONTATO: [card], EM_NEGOCIACAO: [], ORCAMENTO_ENVIADO: [], FECHADO: [], PERDIDO: [] };
     const fetchFn = vi.fn(async (url: string | URL | Request) =>
-      Response.json(String(url).endsWith("/transicoes") ? MAPA_DA_API : []),
+      Response.json(String(url).endsWith("/transicoes") ? MAPA_DA_API : porEstagio),
     ) as unknown as typeof fetch;
 
     const painel = await criarApiHttp(new ClienteHttp("/api", { fetch: fetchFn })).buscarPainel();
 
-    expect(painel).toEqual({ cards: [], mapa: MAPA_DA_API });
+    expect(painel).toEqual({ cards: [card], mapa: MAPA_DA_API });
     expect(vi.mocked(fetchFn).mock.calls.map(([url]) => String(url)).sort()).toEqual([
       "/api/orcamentos",
       "/api/orcamentos/transicoes",

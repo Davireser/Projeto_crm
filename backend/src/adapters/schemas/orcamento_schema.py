@@ -51,6 +51,7 @@ class CardSaida(Esquema):
     estagio: EstagioAtendimento
     valor: Decimal | None
     data_abertura: date
+    data_fechamento: date | None
     qtd_interacoes: int
 
     @classmethod
@@ -62,6 +63,7 @@ class CardSaida(Esquema):
             estagio=card.estagio,
             valor=card.valor,
             data_abertura=card.data_abertura,
+            data_fechamento=card.data_fechamento,
             qtd_interacoes=card.qtd_interacoes,
         )
 

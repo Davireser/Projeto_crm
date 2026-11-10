@@ -15,7 +15,7 @@ import type { NovoContatoValido } from "@/domain/entities/novo-contato";
 import type { Orcamento } from "@/domain/entities/orcamento";
 import type { EntradaNovoUsuario, Usuario } from "@/domain/entities/usuario";
 import type { MapaDeTransicoes } from "@/domain/funil/funil";
-import type { Estagio } from "@/domain/value-objects/estagio-atendimento";
+import { ESTAGIOS, type Estagio } from "@/domain/value-objects/estagio-atendimento";
 import type { TipoInteracao } from "@/domain/value-objects/tipo-interacao";
 import type { ValorOrcado } from "@/domain/value-objects/valor-orcado";
 
@@ -28,6 +28,8 @@ import type {
   ItemHistoricoDto,
   MetricasDto,
   OrcamentoDto,
+  PainelApiDto,
+  PainelDto,
   UsuarioDto,
 } from "./dtos";
 import {
@@ -41,11 +43,25 @@ import {
   paraUsuario,
 } from "./mapeadores";
 
+async function buscarCards(http: ClienteHttp): Promise<CardDto[]> {
+  const porEstagio = await http.get<PainelApiDto>("/orcamentos");
+  return ESTAGIOS.flatMap((estagio) => porEstagio[estagio]);
+}
+
+/** Painel em JSON, usado tanto no servidor (primeira pintura) quanto no navegador. */
+export async function buscarPainelDto(http: ClienteHttp): Promise<PainelDto> {
+  const [cards, mapa] = await Promise.all([
+    buscarCards(http),
+    http.get<MapaDeTransicoes>("/orcamentos/transicoes"),
+  ]);
+  return { cards, mapa };
+}
+
 export class OrcamentoGatewayHttp implements OrcamentoGateway {
   constructor(private readonly http: ClienteHttp) {}
 
   async listarCards(): Promise<Orcamento[]> {
-    return (await this.http.get<CardDto[]>("/orcamentos")).map(paraOrcamento);
+    return (await buscarCards(this.http)).map(paraOrcamento);
   }
 
   obterTransicoes(): Promise<MapaDeTransicoes> {

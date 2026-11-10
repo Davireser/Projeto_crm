@@ -5,9 +5,8 @@ import { Suspense } from "react";
 import { ErroRemoto } from "@/application/errors";
 import { EsqueletoKanban } from "@/components/kanban/esqueleto-kanban";
 import { Kanban } from "@/components/kanban/kanban";
-import type { MapaDeTransicoes } from "@/domain/funil/funil";
-import type { CardDto } from "@/infra/http/dtos";
-import type { PainelDto } from "@/lib/api/api-navegador";
+import type { PainelDto } from "@/infra/http/dtos";
+import { buscarPainelDto } from "@/infra/http/gateways-http";
 import { apiDoServidor } from "@/lib/sessao/servidor";
 
 export const metadata: Metadata = {
@@ -33,12 +32,7 @@ async function PainelComDados() {
 
 async function buscarPainel(): Promise<PainelDto | undefined> {
   try {
-    const http = await apiDoServidor();
-    const [cards, mapa] = await Promise.all([
-      http.get<CardDto[]>("/orcamentos"),
-      http.get<MapaDeTransicoes>("/orcamentos/transicoes"),
-    ]);
-    return { cards, mapa };
+    return await buscarPainelDto(await apiDoServidor());
   } catch (erro) {
     if (erro instanceof ErroRemoto && erro.sessaoExpirada) redirect("/login?de=/painel");
     // API fora do ar: o navegador tenta de novo e, se houver, mostra o cache offline.

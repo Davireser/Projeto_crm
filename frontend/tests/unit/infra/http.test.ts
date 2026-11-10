@@ -103,11 +103,22 @@ describe("ClienteHttp", () => {
 
 describe("Gateways HTTP — rotas e mapeamento", () => {
   it("lista cards e converte o valor", async () => {
-    const { fn, chamadas } = fetchFalso({ corpo: [CARD] });
+    // Formato real de GET /orcamentos: um objeto com os cards agrupados por estágio.
+    const { fn, chamadas } = fetchFalso({
+      corpo: {
+        NOVO_CONTATO: [],
+        EM_NEGOCIACAO: [],
+        ORCAMENTO_ENVIADO: [CARD],
+        FECHADO: [],
+        PERDIDO: [{ ...CARD, id: "o2", estagio: "PERDIDO" }],
+      },
+    });
 
-    const [card] = await new OrcamentoGatewayHttp(new ClienteHttp("/api", { fetch: fn })).listarCards();
+    const cards = await new OrcamentoGatewayHttp(new ClienteHttp("/api", { fetch: fn })).listarCards();
+    const [card] = cards;
 
     expect(chamadas[0]?.url).toBe("/api/orcamentos");
+    expect(cards.map((c) => c.id)).toEqual(["o1", "o2"]);
     expect(card?.valor?.centavos).toBe(420000);
     expect(card?.dataFechamento).toBeNull();
   });

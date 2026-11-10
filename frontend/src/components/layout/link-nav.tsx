@@ -2,15 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Link do menu que se destaca quando a página atual pertence à seção. */
-export function LinkNav({ href, children }: { href: string; children: ReactNode }) {
-  const caminho = usePathname();
-  const ativo = caminho === href || caminho.startsWith(`${href}/`);
+interface Props {
+  href: string;
+  children: ReactNode;
+}
 
+/**
+ * Link do menu que se destaca quando a página atual pertence à seção.
+ * Em rotas como `/clientes/[id]` o caminho só existe na requisição; o Suspense
+ * deixa o menu ser pré-renderizado sem destaque e acende o link ao carregar.
+ */
+export function LinkNav(props: Props) {
+  return (
+    <Suspense fallback={<LinkDoMenu {...props} ativo={false} />}>
+      <LinkComDestaque {...props} />
+    </Suspense>
+  );
+}
+
+function LinkComDestaque(props: Props) {
+  const caminho = usePathname();
+  return <LinkDoMenu {...props} ativo={caminho === props.href || caminho.startsWith(`${props.href}/`)} />;
+}
+
+function LinkDoMenu({ href, children, ativo }: Props & { ativo: boolean }) {
   return (
     <Link
       href={href}

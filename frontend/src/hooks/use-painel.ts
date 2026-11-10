@@ -119,7 +119,6 @@ export function useRegistrarInteracao() {
         const atual = dto?.cards.find((c) => c.id === card.id);
         return atual ? comCard(dto, paraOrcamento(atual).comNovaInteracao()) : dto;
       });
-      void queryClient.invalidateQueries({ queryKey: ["cliente", card.clienteId] });
       toast.success("Interação registrada.");
     },
   });

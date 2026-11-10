@@ -76,6 +76,7 @@ def test_card_traz_a_projecao_enxuta(
     assert card.estagio is E.NOVO_CONTATO
     assert card.valor == Decimal("4200.00")
     assert card.data_abertura == date(2026, 9, 15)
+    assert card.data_fechamento is None
     assert card.qtd_interacoes == 2
 
 

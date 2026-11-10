@@ -39,7 +39,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
+      {/* Extensões do navegador (ex.: ColorZilla) acrescentam atributos no body antes do React. */}
+      <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <ProvedorQuery>
           <ProvedorApi>{children}</ProvedorApi>
         </ProvedorQuery>

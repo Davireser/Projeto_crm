@@ -64,6 +64,7 @@ def test_card_do_painel_e_a_projecao_enxuta(api: TestClient, orcamento_id: str) 
         "estagio": "NOVO_CONTATO",
         "valor": "4200.00",
         "dataAbertura": "2026-09-15",
+        "dataFechamento": None,
         "qtdInteracoes": 1,
     }
 

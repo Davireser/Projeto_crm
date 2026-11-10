@@ -83,6 +83,7 @@ def test_do_primeiro_contato_ao_fechamento(api: TestClient, relogio: RelogioDeTe
     assert fechado["dataAbertura"] == "2026-09-15"
     assert fechado["dataFechamento"] == "2026-09-19"
     assert painel["FECHADO"][0]["qtdInteracoes"] == 2
+    assert painel["FECHADO"][0]["dataFechamento"] == "2026-09-19"
     assert metricas["taxaFechamento"] == "100.00"
     assert [item["conteudo"] for item in historico] == ["Quer 2 mil sacos", "Aprovado!"]
 

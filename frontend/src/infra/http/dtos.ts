@@ -1,5 +1,6 @@
 /** Formato JSON da API (camelCase). Espelha os schemas Pydantic do backend (RNF05). */
 import type { Perfil } from "@/domain/entities/usuario";
+import type { MapaDeTransicoes } from "@/domain/funil/funil";
 import type { Estagio } from "@/domain/value-objects/estagio-atendimento";
 import type { TipoInteracao } from "@/domain/value-objects/tipo-interacao";
 
@@ -13,8 +14,17 @@ export interface CardDto {
   estagio: Estagio;
   valor: DecimalTexto | null;
   dataAbertura: string;
-  dataFechamento?: string | null;
+  dataFechamento: string | null;
   qtdInteracoes: number;
+}
+
+/** JSON de `GET /orcamentos`: os cards agrupados por estágio. */
+export type PainelApiDto = Record<Estagio, CardDto[]>;
+
+/** JSON do painel como a interface usa; é isso que fica no cache offline. */
+export interface PainelDto {
+  cards: CardDto[];
+  mapa: MapaDeTransicoes;
 }
 
 export interface OrcamentoDto {
