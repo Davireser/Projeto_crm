@@ -5,8 +5,9 @@
  * então a atualização otimista e o rollback são testados pelos botões: o jsdom
  * não calcula posição dos elementos, que o dnd-kit precisa para o arraste.
  */
-import { screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Activity, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ErroRemoto } from "@/application/errors";
@@ -124,6 +125,36 @@ describe("Kanban", () => {
     await userEvent.click(within(gaveta).getByRole("button", { name: "Salvar valor" }));
 
     expect(await within(coluna("Novo contato")).findByText(/^R\$\s1\.500,50$/)).toBeInTheDocument();
+  });
+
+  it("mostra o valor já definido no formato brasileiro", async () => {
+    await renderizarPainel();
+    const gaveta = await abrirCard("João");
+
+    expect(within(gaveta).getByLabelText("Valor (R$)")).toHaveValue("4.200,00");
+  });
+
+  it("fecha a gaveta ao sair do painel, para não reaparecer na volta", async () => {
+    // Com cacheComponents, o Next guarda a página que saiu de cena em <Activity mode="hidden">.
+    let mudarModo: (modo: "visible" | "hidden") => void = () => {};
+    function PainelEscondivel() {
+      const [modo, setModo] = useState<"visible" | "hidden">("visible");
+      mudarModo = setModo;
+      return (
+        <Activity mode={modo}>
+          <Kanban />
+        </Activity>
+      );
+    }
+    renderComApi(<PainelEscondivel />, apiDeMemoria(crm));
+    await screen.findByRole("region", { name: /^Novo contato, \d/ });
+    await abrirCard("Maria");
+
+    act(() => mudarModo("hidden"));
+    act(() => mudarModo("visible"));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("region", { name: /^Novo contato, \d/ })).toBeVisible();
   });
 
   it("valor inválido aparece no formulário", async () => {

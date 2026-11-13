@@ -34,6 +34,10 @@ def test_metricas_de_funil_vazio(api: TestClient) -> None:
         "fechados": 0,
         "perdidos": 0,
         "taxaFechamento": None,
+        "porEstagio": [
+            {"estagio": e, "quantidade": 0, "valorTotal": "0.00", "semValor": 0}
+            for e in ("NOVO_CONTATO", "EM_NEGOCIACAO", "ORCAMENTO_ENVIADO", "FECHADO", "PERDIDO")
+        ],
     }
 
 
@@ -54,6 +58,13 @@ def test_metricas_contam_abertos_e_calculam_taxa(api: TestClient) -> None:
         "fechados": 1,
         "perdidos": 1,
         "taxaFechamento": "50.00",
+        "porEstagio": [
+            {"estagio": "NOVO_CONTATO", "quantidade": 1, "valorTotal": "0.00", "semValor": 1},
+            {"estagio": "EM_NEGOCIACAO", "quantidade": 0, "valorTotal": "0.00", "semValor": 0},
+            {"estagio": "ORCAMENTO_ENVIADO", "quantidade": 0, "valorTotal": "0.00", "semValor": 0},
+            {"estagio": "FECHADO", "quantidade": 1, "valorTotal": "100.00", "semValor": 0},
+            {"estagio": "PERDIDO", "quantidade": 1, "valorTotal": "0.00", "semValor": 1},
+        ],
     }
 
 

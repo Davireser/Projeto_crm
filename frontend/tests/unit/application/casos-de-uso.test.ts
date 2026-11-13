@@ -15,6 +15,9 @@ import {
   TransicaoInvalida,
   ValorInvalido,
 } from "@/domain/errors";
+import { MetricasFunil } from "@/domain/entities/metricas-funil";
+import type { Estagio } from "@/domain/value-objects/estagio-atendimento";
+import { ValorOrcado, formatarCentavos } from "@/domain/value-objects/valor-orcado";
 import { CrmEmMemoria } from "@/infra/memoria/crm-em-memoria";
 
 import { MAPA_DA_API } from "../domain/fixtures";
@@ -31,8 +34,8 @@ beforeEach(() => {
   crm = new CrmEmMemoria(MAPA_DA_API, () => new Date("2026-09-15T12:00:00Z"));
 });
 
-async function contatoRegistrado() {
-  return new RegistrarContato(crm.clientes).executar(MARIA);
+async function contatoRegistrado(dados: Partial<typeof MARIA> = {}) {
+  return new RegistrarContato(crm.clientes).executar({ ...MARIA, ...dados });
 }
 
 describe("RegistrarContato (RF01, RF09)", () => {
@@ -157,6 +160,49 @@ describe("ConsultarMetricas (RF06)", () => {
 
     expect(metricas.emAberto).toBe(1);
     expect(metricas.taxaFormatada()).toBe("—");
+  });
+
+  it("soma o dinheiro de cada estágio; orçamento sem valor só conta como 'sem valor'", async () => {
+    const { orcamento } = await contatoRegistrado();
+    await contatoRegistrado({ email: "outra@x.com" });
+    await crm.orcamentos.definirValor(orcamento.id, ValorOrcado.deTexto("1.500,50"));
+
+    const metricas = await new ConsultarMetricas(crm.metricas).executar();
+
+    expect(metricas.porEstagio.map((t) => t.estagio)).toEqual([
+      "NOVO_CONTATO", "EM_NEGOCIACAO", "ORCAMENTO_ENVIADO", "FECHADO", "PERDIDO",
+    ]);
+    expect(metricas.porEstagio[0]).toEqual({ estagio: "NOVO_CONTATO", quantidade: 2, valorCentavos: 150050, semValor: 1 });
+    expect(metricas.valorEmAberto()).toBe(150050);
+  });
+});
+
+describe("MetricasFunil", () => {
+  const total = (estagio: Estagio, valorCentavos: number) => ({ estagio, quantidade: 1, valorCentavos, semValor: 0 });
+
+  it("dinheiro em aberto ignora fechados e perdidos; maior estágio serve de escala para as barras", () => {
+    const metricas = new MetricasFunil({
+      emAberto: 2, fechados: 1, perdidos: 1, taxaFechamento: 50,
+      porEstagio: [total("NOVO_CONTATO", 100), total("EM_NEGOCIACAO", 200), total("FECHADO", 900), total("PERDIDO", 50)],
+    });
+
+    expect(metricas.valorEmAberto()).toBe(300);
+    expect(metricas.maiorValorDeEstagio()).toBe(900);
+  });
+
+  it("dados antigos (sem porEstagio) não quebram", () => {
+    const metricas = new MetricasFunil({ emAberto: 0, fechados: 0, perdidos: 0, taxaFechamento: null } as never);
+
+    expect(metricas.porEstagio).toEqual([]);
+    expect(metricas.valorEmAberto()).toBe(0);
+    expect(metricas.maiorValorDeEstagio()).toBe(0);
+  });
+});
+
+describe("formatarCentavos", () => {
+  it("formata em reais, inclusive zero", () => {
+    expect(formatarCentavos(0)).toMatch(/^R\$\s0,00$/);
+    expect(formatarCentavos(1250000)).toMatch(/^R\$\s12\.500,00$/);
   });
 });
 

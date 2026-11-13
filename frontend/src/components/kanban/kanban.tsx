@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,10 @@ export function Kanban({ inicial }: { inicial?: PainelDto }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor),
   );
+
+  // Com cacheComponents, o Next esconde a página ao navegar (<Activity>) em vez de desmontá-la, e o
+  // estado volta junto. A gaveta é modal: fecha ao sair de cena para não reaparecer na volta.
+  useEffect(() => () => setAbertoId(null), []);
 
   const porId = useMemo(
     () => new Map(ESTAGIOS.flatMap((e) => painel?.colunas[e] ?? []).map((c) => [c.id, c])),
@@ -109,7 +113,7 @@ export function Kanban({ inicial }: { inicial?: PainelDto }) {
         onDragEnd={aoSoltar}
         onDragCancel={() => setArrastandoId(null)}
       >
-        <div className="grid auto-cols-[minmax(15rem,1fr)] grid-flow-col gap-4 overflow-x-auto pb-2">
+        <div className="grid auto-cols-[minmax(14rem,1fr)] grid-flow-col gap-4 overflow-x-auto pb-2">
           {ESTAGIOS.map((estagio) => (
             <Coluna
               key={estagio}

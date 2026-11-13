@@ -6,7 +6,7 @@ import { Orcamento } from "@/domain/entities/orcamento";
 import { Usuario } from "@/domain/entities/usuario";
 import { Email } from "@/domain/value-objects/email";
 import { Telefone } from "@/domain/value-objects/telefone";
-import { ValorOrcado } from "@/domain/value-objects/valor-orcado";
+import { ValorOrcado, centavosDoDecimal } from "@/domain/value-objects/valor-orcado";
 
 import type {
   CardDto,
@@ -73,6 +73,10 @@ export const paraMetricas = (dto: MetricasDto): MetricasFunil =>
   new MetricasFunil({
     ...dto,
     taxaFechamento: dto.taxaFechamento === null ? null : Number(dto.taxaFechamento),
+    porEstagio: dto.porEstagio.map(({ valorTotal, ...total }) => ({
+      ...total,
+      valorCentavos: centavosDoDecimal(valorTotal),
+    })),
   });
 
 export const paraUsuario = (dto: UsuarioDto): Usuario => new Usuario(dto);

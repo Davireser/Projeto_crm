@@ -71,6 +71,14 @@ export interface MetricasDto {
   fechados: number;
   perdidos: number;
   taxaFechamento: DecimalTexto | null;
+  porEstagio: TotalDoEstagioDto[];
+}
+
+export interface TotalDoEstagioDto {
+  estagio: Estagio;
+  quantidade: number;
+  valorTotal: DecimalTexto;
+  semValor: number;
 }
 
 export interface UsuarioDto {

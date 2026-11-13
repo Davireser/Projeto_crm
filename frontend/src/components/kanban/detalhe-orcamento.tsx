@@ -157,7 +157,7 @@ function FormValor({ card, funil }: { card: Orcamento; funil: Funil }) {
           name="valor"
           inputMode="decimal"
           placeholder="Ex.: 4.200,00"
-          defaultValue={card.valor?.paraApi().replace(".", ",") ?? ""}
+          defaultValue={card.valor?.paraEdicao() ?? ""}
           aria-invalid={definir.isError}
           aria-describedby={definir.isError ? `${id}-erro` : undefined}
         />

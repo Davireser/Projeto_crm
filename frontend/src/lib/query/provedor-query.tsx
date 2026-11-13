@@ -11,7 +11,7 @@ import { ErroRemoto } from "@/application/errors";
 export const CHAVE_DO_CACHE = "crm-cache";
 const UM_DIA = 24 * 60 * 60 * 1000;
 // Mudou o formato do que fica no cache? Troque a versão: o cache antigo é descartado.
-const VERSAO_DO_CACHE = "2";
+const VERSAO_DO_CACHE = "3";
 
 /** Exportado para os testes conferirem as regras de nova tentativa. */
 export function criarQueryClient(aoExpirarSessao: () => void): QueryClient {

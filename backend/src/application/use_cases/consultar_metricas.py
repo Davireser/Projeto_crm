@@ -11,6 +11,17 @@ _DUAS_CASAS = Decimal("0.01")
 
 
 @dataclass(frozen=True)
+class TotalDoEstagio:
+    """Quanto dinheiro está parado num estágio do funil."""
+
+    estagio: EstagioAtendimento
+    quantidade: int
+    valor_total: Decimal
+    sem_valor: int
+    """Orçamentos que ainda não têm valor definido (ficam fora da soma)."""
+
+
+@dataclass(frozen=True)
 class MetricasFunil:
     em_aberto: int
     fechados: int
@@ -18,11 +29,28 @@ class MetricasFunil:
     taxa_fechamento: Decimal | None
     """Percentual de FECHADO sobre (FECHADO + PERDIDO). `None` quando nada foi
     concluído ainda — a interface mostra "—", não zero (RN07)."""
+    por_estagio: tuple[TotalDoEstagio, ...]
+    """Um item por estágio, na ordem do funil, mesmo os vazios."""
+
+
+def _totais_por_estagio(orcamentos: list[Orcamento]) -> tuple[TotalDoEstagio, ...]:
+    def total(estagio: EstagioAtendimento) -> TotalDoEstagio:
+        do_estagio = [o for o in orcamentos if o.estagio is estagio]
+        valores = [o.valor.valor for o in do_estagio if o.valor is not None]
+        return TotalDoEstagio(
+            estagio=estagio,
+            quantidade=len(do_estagio),
+            valor_total=sum(valores, Decimal(0)).quantize(_DUAS_CASAS),
+            sem_valor=len(do_estagio) - len(valores),
+        )
+
+    return tuple(total(estagio) for estagio in EstagioAtendimento)
 
 
 def calcular_metricas(orcamentos: Iterable[Orcamento]) -> MetricasFunil:
     """Cálculo puro das métricas do funil (RN07), sem banco."""
-    por_estagio = Counter(o.estagio for o in orcamentos)
+    lista = list(orcamentos)
+    por_estagio = Counter(o.estagio for o in lista)
     fechados = por_estagio[EstagioAtendimento.FECHADO]
     perdidos = por_estagio[EstagioAtendimento.PERDIDO]
     em_aberto = sum(qtd for estagio, qtd in por_estagio.items() if not estagio.eh_terminal())
@@ -30,7 +58,11 @@ def calcular_metricas(orcamentos: Iterable[Orcamento]) -> MetricasFunil:
     concluidos = fechados + perdidos
     taxa = (Decimal(100 * fechados) / concluidos).quantize(_DUAS_CASAS) if concluidos else None
     return MetricasFunil(
-        em_aberto=em_aberto, fechados=fechados, perdidos=perdidos, taxa_fechamento=taxa
+        em_aberto=em_aberto,
+        fechados=fechados,
+        perdidos=perdidos,
+        taxa_fechamento=taxa,
+        por_estagio=_totais_por_estagio(lista),
     )
 
 

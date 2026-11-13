@@ -2,6 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 
+import { COR_DO_ESTAGIO } from "@/components/estagio/cor-do-estagio";
 import type { Orcamento } from "@/domain/entities/orcamento";
 import { rotuloDoEstagio, type Estagio } from "@/domain/value-objects/estagio-atendimento";
 import { cn } from "@/lib/utils";
@@ -10,14 +11,6 @@ import { CartaoOrcamento } from "./cartao-orcamento";
 
 /** Como a coluna aparece enquanto um card é arrastado (destaca os destinos válidos). */
 export type Destaque = "origem" | "valida" | "invalida" | null;
-
-const COR_DO_ESTAGIO: Record<Estagio, string> = {
-  NOVO_CONTATO: "bg-sky-500",
-  EM_NEGOCIACAO: "bg-amber-500",
-  ORCAMENTO_ENVIADO: "bg-violet-500",
-  FECHADO: "bg-emerald-500",
-  PERDIDO: "bg-rose-500",
-};
 
 interface Props {
   estagio: Estagio;

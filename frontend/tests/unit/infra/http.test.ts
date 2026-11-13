@@ -210,7 +210,12 @@ describe("Gateways HTTP — rotas e mapeamento", () => {
   it("métricas e usuários", async () => {
     const usuario = { id: "u1", nome: "Ana", email: "ana@crm.com", perfil: "USUARIO", ativo: true };
     const { fn, chamadas } = fetchFalso(
-      { corpo: { emAberto: 3, fechados: 1, perdidos: 1, taxaFechamento: "50.00" } },
+      {
+        corpo: {
+          emAberto: 3, fechados: 1, perdidos: 1, taxaFechamento: "50.00",
+          porEstagio: [{ estagio: "EM_NEGOCIACAO", quantidade: 2, valorTotal: "1234.56", semValor: 1 }],
+        },
+      },
       { corpo: [usuario] },
       { status: 201, corpo: usuario },
       { corpo: { ...usuario, ativo: false } },
@@ -218,7 +223,9 @@ describe("Gateways HTTP — rotas e mapeamento", () => {
     const http = new ClienteHttp("/api", { fetch: fn });
     const usuarios = new UsuarioGatewayHttp(http);
 
-    expect((await new MetricasGatewayHttp(http).obter()).taxaFormatada()).toBe("50%");
+    const metricas = await new MetricasGatewayHttp(http).obter();
+    expect(metricas.taxaFormatada()).toBe("50%");
+    expect(metricas.porEstagio).toEqual([{ estagio: "EM_NEGOCIACAO", quantidade: 2, valorCentavos: 123456, semValor: 1 }]);
     expect(await usuarios.listar()).toHaveLength(1);
     await usuarios.criar({ nome: "Ana", email: "ana@crm.com", senha: "12345678", perfil: "USUARIO" });
     expect((await usuarios.alterar("u1", { ativo: false })).ativo).toBe(false);

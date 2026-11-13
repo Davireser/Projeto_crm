@@ -9,5 +9,5 @@ router = APIRouter(prefix="/metricas", tags=["metricas"])
 
 @router.get("/funil")
 def consultar_metricas(orcamentos: Orcamentos) -> MetricasSaida:
-    """UC08: orçamentos em aberto e taxa de fechamento (RF06, RN07)."""
+    """UC08: orçamentos em aberto, taxa de fechamento e dinheiro em cada estágio (RF06, RN07)."""
     return MetricasSaida.de(ConsultarMetricasUseCase(orcamentos).executar())

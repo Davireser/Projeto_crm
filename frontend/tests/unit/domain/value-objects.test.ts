@@ -62,6 +62,10 @@ describe("ValorOrcado (RN06)", () => {
     ["4.200,50", 420050],
     ["R$ 1.234.567,89", 123456789],
     ["0,01", 1],
+    // Ponto com três dígitos depois é separador de milhar, como se escreve no Brasil.
+    ["12.500", 1250000],
+    ["1.234.567", 123456700],
+    ["4.20", 420],
   ])("lê %j", (texto, centavos) => {
     expect(ValorOrcado.deTexto(texto).centavos).toBe(centavos);
   });
@@ -79,6 +83,12 @@ describe("ValorOrcado (RN06)", () => {
   it("converte para o decimal que a API espera", () => {
     expect(ValorOrcado.deTexto("4.200,5").paraApi()).toBe("4200.50");
     expect(ValorOrcado.deCentavos(7).paraApi()).toBe("0.07");
+  });
+
+  it("mostra para edição no formato brasileiro, que o próprio deTexto lê de volta", () => {
+    const valor = ValorOrcado.deTexto("12500");
+    expect(valor.paraEdicao()).toBe("12.500,00");
+    expect(ValorOrcado.deTexto(valor.paraEdicao()).igualA(valor)).toBe(true);
   });
 
   it("formata em reais", () => {

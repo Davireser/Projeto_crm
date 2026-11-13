@@ -85,11 +85,19 @@ class TransicoesSaida(Esquema):
         )
 
 
+class TotalDoEstagioSaida(Esquema):
+    estagio: EstagioAtendimento
+    quantidade: int
+    valor_total: Decimal
+    sem_valor: int
+
+
 class MetricasSaida(Esquema):
     em_aberto: int
     fechados: int
     perdidos: int
     taxa_fechamento: Decimal | None
+    por_estagio: list[TotalDoEstagioSaida]
 
     @classmethod
     def de(cls, metricas: MetricasFunil) -> Self:
@@ -98,4 +106,13 @@ class MetricasSaida(Esquema):
             fechados=metricas.fechados,
             perdidos=metricas.perdidos,
             taxa_fechamento=metricas.taxa_fechamento,
+            por_estagio=[
+                TotalDoEstagioSaida(
+                    estagio=t.estagio,
+                    quantidade=t.quantidade,
+                    valor_total=t.valor_total,
+                    sem_valor=t.sem_valor,
+                )
+                for t in metricas.por_estagio
+            ],
         )

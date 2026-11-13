@@ -1,12 +1,20 @@
 import { ValorInvalido } from "@/domain/errors";
 
-// Aceita "4200", "4200.50", "4.200,50" e "R$ 1.234,56". Guarda em centavos
+// Aceita "4200", "4200.50", "4.200,50", "12.500" e "R$ 1.234,56". Guarda em centavos
 // inteiros para não sofrer com arredondamento de ponto flutuante.
 const PREFIXO_MOEDA = /^R\$\s*/i;
 const FORMATO_BR = /^\d{1,3}(?:\.\d{3})*(?:,\d+)?$|^\d+(?:,\d+)?$/;
-const FORMATO_API = /^\d+(?:\.\d+)?$/;
+// No máximo duas casas: "12.500" (três dígitos após o ponto) é milhar no formato brasileiro.
+const FORMATO_API = /^\d+(?:\.\d{1,2})?$/;
 
 const REAIS = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const DECIMAL_BR = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** `R$ 4.200,50`; aceita zero (somas de estágios vazios), ao contrário de um ValorOrcado. */
+export const formatarCentavos = (centavos: number): string => REAIS.format(centavos / 100);
+
+/** `"4200.50"` (decimal da API) em centavos inteiros. */
+export const centavosDoDecimal = (decimal: string): number => Math.round(Number(decimal) * 100);
 
 /** Valor em BRL, maior que zero, com no máximo duas casas decimais (RN06). */
 export class ValorOrcado {
@@ -49,9 +57,14 @@ export class ValorOrcado {
     return `${reais}.${centavos}`;
   }
 
+  /** `4.200,50`: como o usuário digitaria; `deTexto` lê de volta. */
+  paraEdicao(): string {
+    return DECIMAL_BR.format(this.centavos / 100);
+  }
+
   /** `R$ 4.200,50`. */
   formatado(): string {
-    return REAIS.format(this.centavos / 100);
+    return formatarCentavos(this.centavos);
   }
 
   igualA(outro: ValorOrcado): boolean {

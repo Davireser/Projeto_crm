@@ -21,7 +21,7 @@ import { Orcamento } from "@/domain/entities/orcamento";
 import { Usuario, type EntradaNovoUsuario } from "@/domain/entities/usuario";
 import { OperacaoNaoPermitida } from "@/domain/errors";
 import { Funil, type MapaDeTransicoes } from "@/domain/funil/funil";
-import type { Estagio } from "@/domain/value-objects/estagio-atendimento";
+import { ESTAGIOS, type Estagio } from "@/domain/value-objects/estagio-atendimento";
 import type { TipoInteracao } from "@/domain/value-objects/tipo-interacao";
 import type { ValorOrcado } from "@/domain/value-objects/valor-orcado";
 
@@ -162,7 +162,8 @@ export class MetricasEmMemoria implements MetricasGateway {
   constructor(private readonly crm: CrmEmMemoria) {}
 
   async obter(): Promise<MetricasFunil> {
-    const estagios = [...this.crm.orcamentosSalvos.values()].map((o) => o.estagio);
+    const orcamentos = [...this.crm.orcamentosSalvos.values()];
+    const estagios = orcamentos.map((o) => o.estagio);
     const fechados = estagios.filter((e) => e === "FECHADO").length;
     const perdidos = estagios.filter((e) => e === "PERDIDO").length;
     const concluidos = fechados + perdidos;
@@ -171,6 +172,16 @@ export class MetricasEmMemoria implements MetricasGateway {
       fechados,
       perdidos,
       taxaFechamento: concluidos ? Math.round((10000 * fechados) / concluidos) / 100 : null,
+      porEstagio: ESTAGIOS.map((estagio) => {
+        const doEstagio = orcamentos.filter((o) => o.estagio === estagio);
+        const comValor = doEstagio.flatMap((o) => (o.valor ? [o.valor.centavos] : []));
+        return {
+          estagio,
+          quantidade: doEstagio.length,
+          valorCentavos: comValor.reduce((soma, c) => soma + c, 0),
+          semValor: doEstagio.length - comValor.length,
+        };
+      }),
     });
   }
 }
