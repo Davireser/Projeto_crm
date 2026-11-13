@@ -5,7 +5,7 @@ from datetime import date, datetime
 import pytest
 
 from domain.entities.cliente import Cliente
-from domain.exceptions import FormatoInvalido
+from domain.exceptions import FormatoInvalido, OperacaoNaoPermitida
 from domain.value_objects.email import Email
 from domain.value_objects.estagio_atendimento import EstagioAtendimento
 from domain.value_objects.telefone import Telefone
@@ -78,6 +78,30 @@ def test_cliente_pode_abrir_varios_orcamentos_independentes() -> None:
 
     assert primeiro.id != segundo.id
     assert primeiro.cliente_id == segundo.cliente_id == cliente.id
+
+
+# --- Reabrir atendimento de cliente perdido -------------------------------------
+
+
+def test_reabrir_atendimento_abre_novo_orcamento_e_preserva_o_perdido() -> None:
+    cliente = cadastrar()
+    perdido = cliente.abrir_orcamento(hoje=HOJE).mover_estagio(EstagioAtendimento.PERDIDO, HOJE)
+
+    novo = cliente.reabrir_atendimento([perdido], hoje=date(2026, 10, 1))
+
+    assert novo.id != perdido.id
+    assert novo.cliente_id == cliente.id
+    assert novo.estagio is EstagioAtendimento.NOVO_CONTATO
+    assert novo.data_abertura == date(2026, 10, 1)
+    assert perdido.estagio is EstagioAtendimento.PERDIDO
+
+
+def test_reabrir_com_orcamento_em_aberto_e_proibido() -> None:
+    cliente = cadastrar()
+    em_aberto = cliente.abrir_orcamento(hoje=HOJE)
+
+    with pytest.raises(OperacaoNaoPermitida, match="já tem um orçamento em aberto"):
+        cliente.reabrir_atendimento([em_aberto], hoje=HOJE)
 
 
 def test_atualizar_contato_troca_telefone_e_email() -> None:

@@ -5,10 +5,16 @@ import { ConsultarMetricas } from "@/application/use-cases/consultar-metricas";
 import { ConsultarPainel, montarColunas } from "@/application/use-cases/consultar-painel";
 import { DefinirValor } from "@/application/use-cases/definir-valor";
 import { MoverEstagio } from "@/application/use-cases/mover-estagio";
+import { ReabrirAtendimento } from "@/application/use-cases/reabrir-atendimento";
 import { RegistrarContato } from "@/application/use-cases/registrar-contato";
 import { RegistrarInteracao } from "@/application/use-cases/registrar-interacao";
 import { ErroDeValidacao } from "@/application/errors";
-import { FormatoInvalido, TransicaoInvalida, ValorInvalido } from "@/domain/errors";
+import {
+  FormatoInvalido,
+  OperacaoNaoPermitida,
+  TransicaoInvalida,
+  ValorInvalido,
+} from "@/domain/errors";
 import { CrmEmMemoria } from "@/infra/memoria/crm-em-memoria";
 
 import { MAPA_DA_API } from "../domain/fixtures";
@@ -151,5 +157,39 @@ describe("ConsultarMetricas (RF06)", () => {
 
     expect(metricas.emAberto).toBe(1);
     expect(metricas.taxaFormatada()).toBe("—");
+  });
+});
+
+describe("ReabrirAtendimento", () => {
+  it("cliente perdido volta ao funil com um novo orçamento; o perdido continua lá", async () => {
+    const { orcamento } = await contatoRegistrado();
+    await crm.orcamentos.moverEstagio(orcamento.id, "PERDIDO");
+    const perdido = crm.orcamento(orcamento.id);
+
+    const novo = await new ReabrirAtendimento(crm.clientes).executar(perdido);
+
+    expect(novo.id).not.toBe(perdido.id);
+    expect(novo).toMatchObject({ clienteId: perdido.clienteId, clienteNome: "Maria", estagio: "NOVO_CONTATO" });
+    expect(crm.orcamento(perdido.id).estagio).toBe("PERDIDO");
+  });
+
+  it("orçamento que não está perdido nem chega na API", async () => {
+    const { orcamento } = await contatoRegistrado();
+
+    await expect(new ReabrirAtendimento(crm.clientes).executar(orcamento)).rejects.toThrow(
+      OperacaoNaoPermitida,
+    );
+    expect(crm.orcamentosSalvos.size).toBe(1);
+  });
+
+  it("como no backend, não reabre quem ainda tem orçamento em aberto", async () => {
+    const { orcamento } = await contatoRegistrado();
+    await crm.orcamentos.moverEstagio(orcamento.id, "PERDIDO");
+    const perdido = crm.orcamento(orcamento.id);
+    await new ReabrirAtendimento(crm.clientes).executar(perdido);
+
+    await expect(new ReabrirAtendimento(crm.clientes).executar(perdido)).rejects.toThrow(
+      "Maria já tem um orçamento em aberto.",
+    );
   });
 });

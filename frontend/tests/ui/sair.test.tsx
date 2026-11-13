@@ -3,7 +3,6 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { EmConstrucao } from "@/components/layout/em-construcao";
 import { BotaoSair } from "@/components/sessao/botao-sair";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CHAVE_DO_CACHE } from "@/lib/query/provedor-query";
@@ -31,14 +30,5 @@ describe("BotaoSair", () => {
     await vi.waitFor(() => expect(sair).toHaveBeenCalledOnce());
     expect(window.localStorage.getItem(CHAVE_DO_CACHE)).toBeNull();
     expect(queryClient.getQueryData(["painel"])).toBeUndefined();
-  });
-});
-
-describe("EmConstrucao", () => {
-  it("indica a parte do plano", () => {
-    render(<EmConstrucao titulo="Painel" parte="F4" descricao="Kanban" />);
-
-    expect(screen.getByRole("heading", { name: "Painel" })).toBeInTheDocument();
-    expect(screen.getByText("Em construção — Parte F4")).toBeInTheDocument();
   });
 });

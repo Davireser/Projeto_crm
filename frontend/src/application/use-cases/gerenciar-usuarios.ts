@@ -1,6 +1,11 @@
 ﻿import { AcessoNegado, ErroDeValidacao } from "@/application/errors";
 import type { AlteracaoUsuario, UsuarioGateway } from "@/application/ports";
-import { NovoUsuario, type EntradaNovoUsuario, type Usuario } from "@/domain/entities/usuario";
+import {
+  EdicaoUsuario,
+  NovoUsuario,
+  type EntradaNovoUsuario,
+  type Usuario,
+} from "@/domain/entities/usuario";
 import { OperacaoNaoPermitida } from "@/domain/errors";
 
 /**
@@ -27,7 +32,10 @@ export class GerenciarUsuarios {
     if (!solicitante.podeAlterarStatusDe(alvo)) {
       throw new OperacaoNaoPermitida("Um administrador não pode alterar a própria conta.", "ativo");
     }
-    return this.usuarios.alterar(alvo.id, alteracao);
+    const { nome, email, ...resto } = alteracao;
+    const edicao = EdicaoUsuario.validar({ nome, email });
+    if (!edicao.ok) throw new ErroDeValidacao(edicao.erros);
+    return this.usuarios.alterar(alvo.id, { ...resto, ...edicao.valor });
   }
 }
 

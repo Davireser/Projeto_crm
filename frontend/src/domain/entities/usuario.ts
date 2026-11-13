@@ -8,6 +8,12 @@ export const PERFIS = ["USUARIO", "ADMINISTRADOR"] as const;
 
 export type Perfil = (typeof PERFIS)[number];
 
+const ROTULOS_DOS_PERFIS: Record<Perfil, string> = { USUARIO: "Usuário", ADMINISTRADOR: "Administrador" };
+
+export function rotuloDoPerfil(perfil: Perfil): string {
+  return ROTULOS_DOS_PERFIS[perfil];
+}
+
 export interface DadosUsuario {
   id: string;
   nome: string;
@@ -51,6 +57,32 @@ export interface EntradaNovoUsuario {
   senha: string;
   perfil: Perfil;
 }
+
+export interface EntradaEdicaoUsuario {
+  nome?: string;
+  email?: string;
+}
+
+/** Validação da edição de nome e e-mail: só os campos informados, todos os erros juntos. */
+export const EdicaoUsuario = {
+  validar(entrada: EntradaEdicaoUsuario): ResultadoValidacao<EntradaEdicaoUsuario> {
+    const erros: ErrosPorCampo = {};
+    const valor: EntradaEdicaoUsuario = {};
+    if (entrada.nome !== undefined) {
+      valor.nome = entrada.nome.trim();
+      if (!valor.nome) erros.nome = "O nome do usuário é obrigatório.";
+    }
+    if (entrada.email !== undefined) {
+      try {
+        valor.email = Email.criar(entrada.email).endereco;
+      } catch (erro) {
+        if (!(erro instanceof ErroDominio)) throw erro;
+        erros.email = erro.mensagem;
+      }
+    }
+    return Object.keys(erros).length > 0 ? { ok: false, erros } : { ok: true, valor };
+  },
+};
 
 /** Validação do formulário de novo usuário: todos os erros de uma vez. */
 export const NovoUsuario = {

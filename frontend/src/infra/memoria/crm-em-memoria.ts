@@ -19,6 +19,7 @@ import { MetricasFunil } from "@/domain/entities/metricas-funil";
 import type { NovoContatoValido } from "@/domain/entities/novo-contato";
 import { Orcamento } from "@/domain/entities/orcamento";
 import { Usuario, type EntradaNovoUsuario } from "@/domain/entities/usuario";
+import { OperacaoNaoPermitida } from "@/domain/errors";
 import { Funil, type MapaDeTransicoes } from "@/domain/funil/funil";
 import type { Estagio } from "@/domain/value-objects/estagio-atendimento";
 import type { TipoInteracao } from "@/domain/value-objects/tipo-interacao";
@@ -112,19 +113,33 @@ export class ClientesEmMemoria implements ClienteGateway {
       id: this.crm.novoId("cli"),
       criadoEm: this.crm.relogio().toISOString(),
     });
+    this.crm.clientesSalvos.set(cliente.id, cliente);
+    return { clienteId: cliente.id, orcamento: this.abrirOrcamento(cliente.id, cliente.nome) };
+  }
+
+  /** Mesma regra do backend: só reabre se nenhum orçamento do cliente estiver em aberto. */
+  async reabrirAtendimento(clienteId: string, clienteNome: string): Promise<Orcamento> {
+    const funil = Funil.doMapa(this.crm.mapa);
+    const emAberto = [...this.crm.orcamentosSalvos.values()].some(
+      (o) => o.clienteId === clienteId && o.estaEmAberto(funil),
+    );
+    if (emAberto) throw new OperacaoNaoPermitida(`${clienteNome} já tem um orçamento em aberto.`);
+    return this.abrirOrcamento(clienteId, clienteNome);
+  }
+
+  private abrirOrcamento(clienteId: string, clienteNome: string): Orcamento {
     const orcamento = new Orcamento({
       id: this.crm.novoId("orc"),
-      clienteId: cliente.id,
-      clienteNome: cliente.nome,
+      clienteId,
+      clienteNome,
       estagio: "NOVO_CONTATO",
       valor: null,
       dataAbertura: this.crm.hoje(),
       dataFechamento: null,
       qtdInteracoes: 0,
     });
-    this.crm.clientesSalvos.set(cliente.id, cliente);
     this.crm.orcamentosSalvos.set(orcamento.id, orcamento);
-    return { clienteId: cliente.id, orcamento };
+    return orcamento;
   }
 
   async obterCliente(id: string): Promise<ClienteComOrcamentos> {

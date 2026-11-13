@@ -136,3 +136,40 @@ def test_historico_do_cliente_em_ordem_cronologica(
 
 def test_historico_de_cliente_inexistente_devolve_404(api: TestClient) -> None:
     assert api.get(f"{URL}/clientes/{uuid4()}/historico").status_code == 404
+
+
+# --- POST /clientes/{id}/orcamentos: reabrir atendimento -----------------------
+
+
+def test_reabrir_atendimento_de_cliente_perdido_devolve_201(api: TestClient) -> None:
+    corpo = registrar(api)
+    cliente_id = corpo["cliente"]["id"]
+    api.patch(f"{URL}/orcamentos/{corpo['orcamento']['id']}/estagio", json={"estagio": "PERDIDO"})
+
+    resposta = api.post(f"{URL}/clientes/{cliente_id}/orcamentos")
+
+    assert resposta.status_code == 201, resposta.text
+    novo = resposta.json()
+    assert novo == {
+        "id": novo["id"],
+        "clienteId": cliente_id,
+        "estagio": "NOVO_CONTATO",
+        "valor": None,
+        "dataAbertura": "2026-09-15",
+        "dataFechamento": None,
+    }
+    estagios = [o["estagio"] for o in api.get(f"{URL}/clientes/{cliente_id}").json()["orcamentos"]]
+    assert sorted(estagios) == ["NOVO_CONTATO", "PERDIDO"]
+
+
+def test_reabrir_com_orcamento_em_aberto_devolve_422(api: TestClient) -> None:
+    cliente_id = registrar(api)["cliente"]["id"]
+
+    resposta = api.post(f"{URL}/clientes/{cliente_id}/orcamentos")
+
+    assert resposta.status_code == 422
+    assert resposta.json()["erro"] == "OperacaoNaoPermitida"
+
+
+def test_reabrir_cliente_inexistente_devolve_404(api: TestClient) -> None:
+    assert api.post(f"{URL}/clientes/{uuid4()}/orcamentos").status_code == 404

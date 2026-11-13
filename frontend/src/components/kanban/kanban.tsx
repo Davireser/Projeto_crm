@@ -134,6 +134,7 @@ export function Kanban({ inicial }: { inicial?: PainelDto }) {
         card={abertoId ? (porId.get(abertoId) ?? null) : null}
         funil={funil}
         aoFechar={() => setAbertoId(null)}
+        aoAbrir={setAbertoId}
       />
     </div>
   );

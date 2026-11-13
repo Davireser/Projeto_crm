@@ -9,8 +9,10 @@ from adapters.schemas.cliente_schema import (
     NovoContatoEntrada,
 )
 from adapters.schemas.interacao_schema import ItemHistoricoSaida
+from adapters.schemas.orcamento_schema import OrcamentoSaida
 from application.use_cases.consultar_cliente import ConsultarClienteUseCase
 from application.use_cases.consultar_historico_cliente import ConsultarHistoricoClienteUseCase
+from application.use_cases.reabrir_atendimento import ReabrirAtendimentoUseCase
 from application.use_cases.registrar_novo_contato import RegistrarNovoContatoUseCase
 
 router = APIRouter(prefix="/clientes", tags=["clientes"])
@@ -41,3 +43,12 @@ def consultar_historico(
     """UC09: interações de todos os orçamentos do cliente, em ordem cronológica (RF07)."""
     itens = ConsultarHistoricoClienteUseCase(clientes, orcamentos).executar(cliente_id)
     return [ItemHistoricoSaida.do_item(item) for item in itens]
+
+
+@router.post("/{cliente_id}/orcamentos", status_code=status.HTTP_201_CREATED)
+def reabrir_atendimento(
+    cliente_id: UUID, clientes: Clientes, orcamentos: Orcamentos, relogio: RelogioDaApp
+) -> OrcamentoSaida:
+    """Cliente perdido volta ao funil com um novo orçamento em NOVO_CONTATO."""
+    use_case = ReabrirAtendimentoUseCase(clientes, orcamentos, relogio)
+    return OrcamentoSaida.de(use_case.executar(cliente_id))

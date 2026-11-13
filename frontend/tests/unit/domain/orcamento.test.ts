@@ -92,3 +92,11 @@ function capturar(acao: () => unknown): unknown {
   }
   throw new Error("esperava uma exceção");
 }
+
+describe("Orcamento — reabrir atendimento", () => {
+  it("só um orçamento perdido permite reabrir o atendimento do cliente", () => {
+    expect(orcamento("PERDIDO").podeReabrirAtendimento()).toBe(true);
+    expect(orcamento("FECHADO").podeReabrirAtendimento()).toBe(false);
+    expect(orcamento("NOVO_CONTATO").podeReabrirAtendimento()).toBe(false);
+  });
+});

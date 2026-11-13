@@ -8,7 +8,7 @@ import type { EntradaNovoContato } from "@/domain/entities/novo-contato";
 import { paraCardDto } from "@/infra/http/mapeadores";
 import { useApi, type PainelDto } from "@/lib/api/api-navegador";
 
-import { CHAVE_PAINEL } from "./use-painel";
+import { CHAVE_METRICAS, CHAVE_PAINEL } from "./use-painel";
 
 /** Cadastra cliente + primeiro orçamento; o card já entra no painel em cache (RF01). */
 export function useRegistrarContato() {
@@ -24,6 +24,7 @@ export function useRegistrarContato() {
         (dto) => dto && { ...dto, cards: [...dto.cards, paraCardDto(orcamento)] },
       );
       void queryClient.invalidateQueries({ queryKey: CHAVE_PAINEL });
+      void queryClient.invalidateQueries({ queryKey: CHAVE_METRICAS });
       toast.success(`Contato de ${orcamento.clienteNome} registrado.`);
     },
   });

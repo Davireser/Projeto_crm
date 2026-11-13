@@ -166,5 +166,32 @@ describe("Kanban", () => {
 
     expect(within(gaveta).getByText("Orçamento encerrado.")).toBeInTheDocument();
     expect(within(gaveta).queryByLabelText("Valor (R$)")).not.toBeInTheDocument();
+    expect(within(gaveta).getByRole("button", { name: "Reabrir atendimento" })).toBeInTheDocument();
+  });
+
+  it("cliente perdido volta ao funil com um novo orçamento", async () => {
+    await crm.orcamentos.moverEstagio((await crm.orcamentos.listarCards())[0]!.id, "PERDIDO");
+    await renderizarPainel();
+    const gaveta = await abrirCard("Maria");
+
+    await userEvent.click(within(gaveta).getByRole("button", { name: "Reabrir atendimento" }));
+
+    expect(await screen.findByText("Atendimento de Maria reaberto em Novo contato.")).toBeInTheDocument();
+    expect(within(coluna("Novo contato")).getByText("Maria")).toBeInTheDocument();
+    expect(within(coluna("Perdido")).getByText("Maria")).toBeInTheDocument();
+    // A gaveta passa a mostrar o orçamento novo, já com os movimentos liberados.
+    expect(within(screen.getByRole("dialog")).getByRole("button", { name: "Mover para Em negociação" })).toBeInTheDocument();
+  });
+
+  it("não reabre quem já tem orçamento em aberto: o motivo aparece num aviso", async () => {
+    const [deMaria] = await crm.orcamentos.listarCards();
+    await crm.orcamentos.moverEstagio(deMaria!.id, "PERDIDO");
+    await crm.clientes.reabrirAtendimento(deMaria!.clienteId, "Maria");
+    await renderizarPainel();
+    await userEvent.click(within(coluna("Perdido")).getByRole("button", { name: "Abrir orçamento de Maria" }));
+
+    await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Reabrir atendimento" }));
+
+    expect(await screen.findByText("Maria já tem um orçamento em aberto.")).toBeInTheDocument();
   });
 });

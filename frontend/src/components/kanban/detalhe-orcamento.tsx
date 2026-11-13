@@ -1,5 +1,6 @@
 "use client";
 
+import { RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useId, useState, type FormEvent } from "react";
 
@@ -24,7 +25,12 @@ import {
   rotuloDoTipo,
   type TipoInteracao,
 } from "@/domain/value-objects/tipo-interacao";
-import { useDefinirValor, useRegistrarInteracao, useTentarMover } from "@/hooks/use-painel";
+import {
+  useDefinirValor,
+  useReabrirAtendimento,
+  useRegistrarInteracao,
+  useTentarMover,
+} from "@/hooks/use-painel";
 import { formatarData } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/mensagens";
 
@@ -32,20 +38,22 @@ interface Props {
   card: Orcamento | null;
   funil: Funil;
   aoFechar: () => void;
+  /** Troca o orçamento mostrado (ex.: o novo, depois de reabrir o atendimento). */
+  aoAbrir: (id: string) => void;
 }
 
 /** Gaveta com os detalhes do orçamento: mover, definir valor e registrar interação. */
-export function DetalheOrcamento({ card, funil, aoFechar }: Props) {
+export function DetalheOrcamento({ card, funil, aoFechar, aoAbrir }: Props) {
   return (
     <Sheet open={card !== null} onOpenChange={(aberto) => !aberto && aoFechar()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-md">
-        {card && <Conteudo card={card} funil={funil} />}
+        {card && <Conteudo card={card} funil={funil} aoAbrir={aoAbrir} />}
       </SheetContent>
     </Sheet>
   );
 }
 
-function Conteudo({ card, funil }: { card: Orcamento; funil: Funil }) {
+function Conteudo({ card, funil, aoAbrir }: { card: Orcamento; funil: Funil; aoAbrir: (id: string) => void }) {
   const encerrado = !card.estaEmAberto(funil);
 
   return (
@@ -60,6 +68,7 @@ function Conteudo({ card, funil }: { card: Orcamento; funil: Funil }) {
       </SheetHeader>
       <div className="grid gap-6 px-4 pb-6">
         <Movimentos card={card} funil={funil} />
+        {card.podeReabrirAtendimento() && <ReabrirAtendimento card={card} aoAbrir={aoAbrir} />}
         <Separator />
         {encerrado ? (
           <section className="grid gap-1">
@@ -103,6 +112,28 @@ function Movimentos({ card, funil }: { card: Orcamento; funil: Funil }) {
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+function ReabrirAtendimento({ card, aoAbrir }: { card: Orcamento; aoAbrir: (id: string) => void }) {
+  const reabrir = useReabrirAtendimento();
+
+  return (
+    <section className="grid gap-2 rounded-lg border border-dashed p-3">
+      <h3 className="text-sm font-medium">Cliente voltou a ter interesse?</h3>
+      <p className="text-sm text-muted-foreground">
+        Abre um novo orçamento em Novo contato. Este continua como perdido no histórico e nas métricas.
+      </p>
+      <Button
+        size="sm"
+        variant="secondary"
+        className="w-fit"
+        disabled={reabrir.isPending}
+        onClick={() => reabrir.mutate(card, { onSuccess: (novo) => aoAbrir(novo.id) })}
+      >
+        <RotateCcw aria-hidden /> Reabrir atendimento
+      </Button>
     </section>
   );
 }

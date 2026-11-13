@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { Toaster } from "sonner";
 
 import { paraCardDto } from "@/infra/http/mapeadores";
-import { CrmEmMemoria } from "@/infra/memoria/crm-em-memoria";
+import { CrmEmMemoria, UsuariosEmMemoria } from "@/infra/memoria/crm-em-memoria";
 import { ProvedorApi, type ApiDoNavegador } from "@/lib/api/api-navegador";
 
 import { MAPA_DA_API } from "../unit/domain/fixtures";
@@ -18,6 +18,8 @@ export function apiDeMemoria(crm: CrmEmMemoria): ApiDoNavegador {
     }),
     orcamentos: crm.orcamentos,
     clientes: crm.clientes,
+    metricas: crm.metricas,
+    usuarios: new UsuariosEmMemoria(),
   };
 }
 

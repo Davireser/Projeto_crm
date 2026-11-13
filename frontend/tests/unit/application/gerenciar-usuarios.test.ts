@@ -53,6 +53,17 @@ describe("GerenciarUsuarios (RF10, RNF07)", () => {
     );
   });
 
+  it("edita nome e e-mail validando os dois", async () => {
+    const editada = await caso.alterar(admin, ana, { nome: " Ana Paula ", email: "ANA.P@crm.com" });
+
+    expect(editada).toMatchObject({ nome: "Ana Paula", email: "ana.p@crm.com" });
+    const erro = await caso.alterar(admin, ana, { nome: "", email: "x" }).catch((e: unknown) => e);
+    expect((erro as ErroDeValidacao).erros).toEqual({
+      nome: "O nome do usuário é obrigatório.",
+      email: expect.stringContaining("E-mail inválido"),
+    });
+  });
+
   it("admin não altera a própria conta", async () => {
     await expect(caso.alterar(admin, admin, { ativo: false })).rejects.toThrow(
       OperacaoNaoPermitida,

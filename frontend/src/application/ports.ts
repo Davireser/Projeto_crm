@@ -43,6 +43,8 @@ export interface ClienteGateway {
   registrarContato(contato: NovoContatoValido): Promise<ContatoRegistrado>;
   obterCliente(id: string): Promise<ClienteComOrcamentos>;
   historico(id: string): Promise<ItemHistorico[]>;
+  /** Abre um novo orçamento em Novo contato para um cliente sem orçamento em aberto. */
+  reabrirAtendimento(clienteId: string, clienteNome: string): Promise<Orcamento>;
 }
 
 export interface MetricasGateway {

@@ -109,6 +109,11 @@ export class ClienteGatewayHttp implements ClienteGateway {
     };
   }
 
+  async reabrirAtendimento(clienteId: string, clienteNome: string): Promise<Orcamento> {
+    const dto = await this.http.post<OrcamentoDto>(`/clientes/${clienteId}/orcamentos`, {});
+    return paraOrcamentoDoCliente(dto, clienteNome);
+  }
+
   async historico(id: string): Promise<ItemHistorico[]> {
     return (await this.http.get<ItemHistoricoDto[]>(`/clientes/${id}/historico`)).map(
       paraItemHistorico,

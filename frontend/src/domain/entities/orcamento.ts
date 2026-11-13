@@ -75,6 +75,14 @@ export class Orcamento implements DadosOrcamento {
     return this.com({ valor });
   }
 
+  /**
+   * Perdido é terminal (RN01): o cliente volta ao funil com um novo orçamento,
+   * e este continua perdido no histórico e na taxa de fechamento.
+   */
+  podeReabrirAtendimento(): boolean {
+    return this.estagio === "PERDIDO";
+  }
+
   comNovaInteracao(): Orcamento {
     return this.com({ qtdInteracoes: this.qtdInteracoes + 1 });
   }

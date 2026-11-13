@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { montarColunas, type Painel } from "@/application/use-cases/consultar-painel";
 import { DefinirValor } from "@/application/use-cases/definir-valor";
 import { MoverEstagio } from "@/application/use-cases/mover-estagio";
+import { ReabrirAtendimento } from "@/application/use-cases/reabrir-atendimento";
 import { RegistrarInteracao } from "@/application/use-cases/registrar-interacao";
 import type { Orcamento } from "@/domain/entities/orcamento";
 import { Funil } from "@/domain/funil/funil";
@@ -17,6 +18,8 @@ import { hojeNoNegocio } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/mensagens";
 
 export const CHAVE_PAINEL = ["painel"] as const;
+/** Mudanças no funil alteram as métricas: quem mexe no painel também as invalida. */
+export const CHAVE_METRICAS = ["metricas"] as const;
 
 /** O cache guarda o JSON (serializável para o modo offline); a tela recebe o domínio. */
 function paraPainel(dto: PainelDto): Painel {
@@ -70,7 +73,11 @@ export function useMoverEstagio() {
     onSuccess: (confirmado) => {
       queryClient.setQueryData<PainelDto>(CHAVE_PAINEL, (dto) => comCard(dto, confirmado));
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: CHAVE_PAINEL }),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: CHAVE_PAINEL }),
+        queryClient.invalidateQueries({ queryKey: CHAVE_METRICAS }),
+      ]),
   });
 }
 
@@ -121,5 +128,26 @@ export function useRegistrarInteracao() {
       });
       toast.success("Interação registrada.");
     },
+  });
+}
+
+/** Cliente perdido volta ao funil: o novo card entra em Novo contato e o perdido fica onde está. */
+export function useReabrirAtendimento() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ["reabrir-atendimento"],
+    mutationFn: (perdido: Orcamento) => new ReabrirAtendimento(api.clientes).executar(perdido),
+    onSuccess: (novo) => {
+      queryClient.setQueryData<PainelDto>(
+        CHAVE_PAINEL,
+        (dto) => dto && { ...dto, cards: [...dto.cards, paraCardDto(novo)] },
+      );
+      void queryClient.invalidateQueries({ queryKey: CHAVE_METRICAS });
+      toast.success(`Atendimento de ${novo.clienteNome} reaberto em Novo contato.`);
+    },
+    onError: (erro) => toast.error(mensagemDeErro(erro)),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: CHAVE_PAINEL }),
   });
 }

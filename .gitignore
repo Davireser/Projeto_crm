@@ -26,8 +26,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Só na raiz: sem a barra, "lib/" escondia frontend/src/lib.
+/lib/
+/lib64/
 parts/
 sdist/
 var/

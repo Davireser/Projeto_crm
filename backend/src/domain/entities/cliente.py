@@ -1,9 +1,10 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from datetime import date, datetime
 from uuid import UUID, uuid4
 
 from domain.entities.orcamento import Orcamento
-from domain.exceptions import FormatoInvalido
+from domain.exceptions import FormatoInvalido, OperacaoNaoPermitida
 from domain.value_objects.email import Email
 from domain.value_objects.telefone import Telefone
 
@@ -54,6 +55,16 @@ class Cliente:
     def abrir_orcamento(self, hoje: date) -> Orcamento:
         """Abre um novo Orçamento em NOVO_CONTATO para este cliente (RF01, RF08)."""
         return Orcamento.abrir(cliente_id=self.id, hoje=hoje)
+
+    def reabrir_atendimento(self, orcamentos: Iterable[Orcamento], hoje: date) -> Orcamento:
+        """Traz o cliente de volta ao funil com um novo Orçamento em NOVO_CONTATO.
+
+        Os orçamentos encerrados ficam como estão: Perdido continua terminal (RN01)
+        e segue contando na taxa de fechamento. Só faz sentido se nenhum estiver em aberto.
+        """
+        if any(o.esta_em_aberto() for o in orcamentos):
+            raise OperacaoNaoPermitida(f"{self.nome} já tem um orçamento em aberto.")
+        return self.abrir_orcamento(hoje)
 
     def atualizar_contato(self, *, telefone: Telefone, email: Email) -> "Cliente":
         return replace(self, telefone=telefone, email=email)

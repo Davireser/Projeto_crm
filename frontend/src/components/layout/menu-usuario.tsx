@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { rotuloDoPerfil } from "@/domain/entities/usuario";
 import { usuarioAtual } from "@/lib/sessao/servidor";
 
 import { LinkNav } from "./link-nav";
@@ -41,7 +42,7 @@ export async function MenuUsuario() {
             <span className="truncate">{usuario.nome}</span>
             <span className="truncate text-xs font-normal text-muted-foreground">{usuario.email}</span>
             <span className="text-xs font-normal text-muted-foreground">
-              {usuario.perfil === "ADMINISTRADOR" ? "Administrador" : "Usuário"}
+              {rotuloDoPerfil(usuario.perfil)}
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

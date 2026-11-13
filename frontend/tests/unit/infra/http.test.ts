@@ -187,6 +187,26 @@ describe("Gateways HTTP — rotas e mapeamento", () => {
     expect(historico[0]?.orcamentoId).toBe("o1");
   });
 
+  it("reabrir atendimento cria orçamento pelo cliente", async () => {
+    const novo = {
+      id: "o9",
+      clienteId: "c1",
+      estagio: "NOVO_CONTATO",
+      valor: null,
+      dataAbertura: "2026-10-01",
+      dataFechamento: null,
+    };
+    const { fn, chamadas } = fetchFalso({ status: 201, corpo: novo });
+
+    const orcamento = await new ClienteGatewayHttp(new ClienteHttp("/api", { fetch: fn })).reabrirAtendimento(
+      "c1",
+      "Maria",
+    );
+
+    expect(`${chamadas[0]?.metodo} ${chamadas[0]?.url}`).toBe("POST /api/clientes/c1/orcamentos");
+    expect(orcamento).toMatchObject({ id: "o9", clienteNome: "Maria", estagio: "NOVO_CONTATO", qtdInteracoes: 0 });
+  });
+
   it("métricas e usuários", async () => {
     const usuario = { id: "u1", nome: "Ana", email: "ana@crm.com", perfil: "USUARIO", ativo: true };
     const { fn, chamadas } = fetchFalso(
