@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Gera .next/standalone: servidor mínimo usado pela imagem Docker (frontend/Dockerfile).
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

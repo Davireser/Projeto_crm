@@ -1,0 +1,8 @@
+# Fica fora da imagem: dependências e builds locais (o Dockerfile instala e compila de novo),
+# relatórios e arquivos gerados.
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.env*

@@ -178,7 +178,7 @@ Variáveis em `.env`, documentadas em `.env.example`:
 | `JWT_SECRET` | Segredo de assinatura do token |
 | `JWT_EXPIRATION_MINUTES` | Validade do token |
 | `CORS_ORIGINS` | Origens permitidas para o frontend |
-| `NEXT_PUBLIC_API_URL` | URL base da API consumida pelo frontend |
+| `API_URL` | Endereço do backend, lido só no servidor do Next (o navegador chama `/api` do próprio Next) |
 
 O arquivo `.env` está no `.gitignore`; apenas `.env.example` é versionado.
 

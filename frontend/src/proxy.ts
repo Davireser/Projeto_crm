@@ -16,5 +16,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Fora: rotas de API (o repasse trata a sessão) e arquivos estáticos.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon|manifest.webmanifest|robots.txt).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|icon|manifest.webmanifest|robots.txt).*)"],
 };

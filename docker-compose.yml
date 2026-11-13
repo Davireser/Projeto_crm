@@ -1,5 +1,6 @@
-# Orquestra o banco e o backend (RNF09). Uso, na raiz do projeto:
+# Orquestra o banco, o backend e o frontend (RNF09). Uso, na raiz do projeto:
 #   docker compose up --build        -> PostgreSQL + API (Swagger em http://localhost:8000/docs)
+#                                       + frontend (http://localhost:3000)
 #                                       + pgAdmin, o banco pelo navegador (http://localhost:5050)
 #   docker compose run --rm testes   -> testes com cobertura (relatório em backend/htmlcov)
 # Os valores vêm do .env da raiz (veja .env.example); os padrões abaixo servem só para desenvolvimento.
@@ -41,6 +42,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      # O Next fala com a API pela rede interna do Docker; o navegador só fala com o Next.
+      API_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
 
   pgadmin:
     # pgAdmin, o banco pelo navegador: http://localhost:5050. Login com PGADMIN_EMAIL e
