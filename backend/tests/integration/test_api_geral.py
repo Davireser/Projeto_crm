@@ -184,3 +184,11 @@ def test_exemplos_do_docs_percorrem_o_funil(api: TestClient) -> None:
     assert api.post(f"{rota}/interacoes", json=interacao).status_code == 201
     novo_usuario = exemplo_documentado(api, "NovoUsuarioEntrada")
     assert api.post(f"{URL}/usuarios", json=novo_usuario).status_code == 201
+
+
+def test_health_check_responde_sem_login(api_anonima: TestClient) -> None:
+    """Usado pelo Render para saber se a API subiu."""
+    resposta = api_anonima.get("/health")
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"status": "ok"}

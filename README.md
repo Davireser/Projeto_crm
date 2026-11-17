@@ -85,6 +85,10 @@ O Next fala com a API pelo endereço de `API_URL` (padrão `http://localhost:800
 
 Detalhes em [docs/plano-backend.md](docs/plano-backend.md) e [docs/plano-frontend.md](docs/plano-frontend.md).
 
+### Deploy
+Neon (banco), Docker Hub + Render (API) e Vercel (frontend), publicados pelo GitHub Actions
+depois dos testes: passo a passo em [docs/deploy.md](docs/deploy.md).
+
 ## Estrutura da documentação
 ```text
 Projeto_CRM/

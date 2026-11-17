@@ -31,9 +31,11 @@ COPY tests ./tests
 CMD ["python", "-m", "pytest", "--cov", "--cov-report=term-missing", "--cov-report=html"]
 
 
-# Servidor: aplica as migrations pendentes e sobe a API na porta 8000.
+# Servidor: aplica as migrations pendentes e sobe a API. A porta vem de $PORT quando a
+# hospedagem define (o Render define); senão, 8000. Este é o último alvo: o padrão do build.
 FROM base AS api
 RUN useradd --create-home crm
 USER crm
+ENV PORT=8000
 EXPOSE 8000
-CMD ["sh", "-c", "python -m alembic upgrade head && exec python -m uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "python -m alembic upgrade head && exec python -m uvicorn main:app --host 0.0.0.0 --port \"$PORT\" --proxy-headers --forwarded-allow-ips='*'"]

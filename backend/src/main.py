@@ -87,6 +87,11 @@ def criar_app(
     )
     registrar_tratadores_de_erro(app)
 
+    @app.get("/health", tags=["infra"])
+    def health() -> dict[str, str]:
+        """Health check do Render: a API está no ar (sem login e sem tocar no banco)."""
+        return {"status": "ok"}
+
     # Login e gestão de usuários tratam a autenticação por conta própria.
     app.include_router(auth_controller.router, prefix=config.api_v1_prefix)
     app.include_router(usuario_controller.router, prefix=config.api_v1_prefix)

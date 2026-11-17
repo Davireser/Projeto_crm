@@ -1,0 +1,128 @@
+# CI/CD (guia em docs/deploy.md).
+# Pull request: só testes. Push na main: testes e, se passarem, imagem no Docker Hub,
+# deploy da API no Render e do frontend na Vercel.
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGEM_BACKEND: crm-backend
+
+jobs:
+  backend-tests:
+    name: Backend (pytest, mypy, ruff)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      # Banco só dos testes: as variantes PostgreSQL dos testes de integração rodam nele.
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: crm
+          POSTGRES_PASSWORD: crm
+          POSTGRES_DB: crm_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U crm -d crm_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://crm:crm@localhost:5432/crm_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Dependências (do pyproject.toml, como no Dockerfile)
+        run: |
+          python -m pip install --upgrade pip
+          python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" > /tmp/dependencias.txt
+          pip install -r /tmp/dependencias.txt
+          pip install --group dev
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy src tests
+      - run: python -m pytest -q
+
+  frontend-tests:
+    name: Frontend (vitest, lint, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npx next typegen
+      - run: npm run typecheck
+      - run: npm run test:run
+      - run: npm run build
+
+  docker-build-push:
+    name: Imagem da API no Docker Hub
+    needs: [backend-tests, frontend-tests]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: backend
+          target: api
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGEM_BACKEND }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGEM_BACKEND }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-backend-render:
+    name: Deploy da API no Render
+    needs: docker-build-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aciona o Deploy Hook (o Render baixa a imagem :latest)
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: curl --fail --silent --show-error -X POST "$HOOK" > /dev/null
+
+  deploy-frontend:
+    name: Deploy do frontend na Vercel
+    needs: [backend-tests, frontend-tests]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm install --global vercel@latest
+      # Da raiz do repositório: o "Root Directory" do projeto na Vercel já aponta para frontend/.
+      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
