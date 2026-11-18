@@ -62,3 +62,14 @@ def test_outros_drivers_ficam_como_estao() -> None:
     assert final.drivername == "postgresql+psycopg"
     assert final.query["sslmode"] == "require"
     assert argumentos == {}
+
+
+def test_url_do_neon_com_channel_binding_funciona() -> None:
+    """O Neon mostra a URL com channel_binding=require, que o pg8000 não aceita como argumento."""
+    final, argumentos = preparar_conexao(
+        "postgresql://u:s@ep-x.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+    )
+
+    assert final.drivername == "postgresql+pg8000"
+    assert dict(final.query) == {}
+    assert "ssl_context" in argumentos

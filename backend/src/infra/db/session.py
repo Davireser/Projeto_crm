@@ -30,7 +30,7 @@ def criar_engine(url: str) -> Engine:
 
 
 def preparar_conexao(url: str) -> tuple[URL, dict[str, Any]]:
-    """Aceita a URL como o Supabase/PostgreSQL mostra (postgresql://...?sslmode=require).
+    """Aceita a URL como o Neon/Supabase mostra (postgresql://...?sslmode=require).
 
     Troca o driver para o pg8000 e traduz o `sslmode` do libpq — que o pg8000 não
     entende — em um contexto SSL. URLs de outros drivers passam sem mudança.
@@ -44,6 +44,9 @@ def preparar_conexao(url: str) -> tuple[URL, dict[str, Any]]:
     parametros = dict(final.query)
     modo = parametros.pop("sslmode", None)
     certificado_raiz = parametros.pop("sslrootcert", None)
+    # O Neon mostra a URL com channel_binding=require; o pg8000 não tem essa opção
+    # (ele já usa SCRAM quando o servidor pede), então o parâmetro sai.
+    parametros.pop("channel_binding", None)
     final = final.set(query=parametros)
     contexto = _contexto_ssl(
         modo if isinstance(modo, str) else None,

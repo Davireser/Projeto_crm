@@ -25,19 +25,25 @@ A ordem abaixo importa: cada passo usa um valor do anterior.
 ## 1. Banco no Neon
 
 1. Em [neon.tech](https://neon.tech), crie um projeto: nome `crm-orcamentos`, Postgres 17,
-   região **AWS US East (Ohio)** — a mesma que você vai escolher no Render.
-2. No painel do projeto, clique em **Connect**, **desligue "Connection pooling"** e copie a
-   connection string. Ela vem assim:
+   região **AWS US East 2 (Ohio)** — a mesma que você vai escolher no Render. Não use São Paulo:
+   o Render não tem servidor no Brasil, e cada consulta atravessaria o continente.
+2. No painel do projeto, clique em **Connect**, **desligue "Connection pooling"** (o endereço não
+   pode ter `-pooler`) e copie a connection string. Ela vem assim, e pode ser usada como está:
 
    ```text
    postgresql://neondb_owner:SENHA@ep-xxxx.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
    ```
 
-3. Apague o `&channel_binding=require` do final. Fica:
+   O `channel_binding` é ignorado pela API (o pg8000 não tem essa opção).
+3. Teste a URL e crie as tabelas do seu computador (PowerShell, dentro de `backend/`):
 
-   ```text
-   postgresql://neondb_owner:SENHA@ep-xxxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+   ```powershell
+   $env:DATABASE_URL = Read-Host "Cole a URL do Neon"
+   .\.venv\Scripts\python.exe -m alembic upgrade head
    ```
+
+   Deu certo se aparecer `Running upgrade -> ...`. Continue no mesmo terminal para criar o
+   primeiro administrador (passo 3, "Primeiro administrador").
 
 > Não troque o prefixo para `postgresql+asyncpg://`: este backend usa o driver **pg8000**. A API já
 > converte `postgresql://...?sslmode=require` sozinha (`infra/db/session.py`).
@@ -162,7 +168,7 @@ Pull requests só rodam 1 e 2. Para rodar tudo sem commit novo: aba **Actions �
 | Sintoma | O que fazer |
 | --- | --- |
 | API não sobe: `Defina JWT_SECRET` | Falta `JWT_SECRET` no Render (com `ENVIRONMENT=production` o padrão é recusado). |
-| Erro de conexão com o banco | A URL tem `?sslmode=require`? Tirou o `channel_binding`? Usou a conexão **sem** pooling? |
+| Erro de conexão com o banco | Colou a connection string (`postgresql://...`) e não o link do painel? Tem `?sslmode=require`? Usou a conexão **sem** pooling? |
 | Neon: `Endpoint ID is not specified` | Coloque o ID do endpoint antes da senha: `postgresql://neondb_owner:endpoint=ep-xxxx;SENHA@ep-xxxx...` |
 | Login na Vercel dá erro de rede | `API_URL` na Vercel aponta para o Render, sem `/api/v1` e sem barra final? Depois de mudar, faça um redeploy. |
 | Primeira requisição demora ~1 minuto | Normal no plano Free: o Render hiberna após 15 min sem uso. |
